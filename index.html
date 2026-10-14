@@ -37,7 +37,7 @@
 #start-screen{background:linear-gradient(180deg,rgba(6,12,5,.1) 0%,rgba(6,12,5,.18) 38%,rgba(6,12,5,.85) 100%),url("./jamestown.jpg") center top/cover no-repeat,url("./jamestown.jpeg") center top/cover no-repeat,url("./jamestown.png") center top/cover no-repeat,url("./jamestown.webp") center top/cover no-repeat;background-color:#1b2a14;backdrop-filter:none;align-items:center;padding-bottom:0}
 </style>
 </head>
-<body class="relative w-screen h-screen overflow-hidden">
+<body class="relative w-screen h-[100dvh] overflow-hidden">
 <div id="canvas-container"></div>
 <div class="ui-layer flex flex-col justify-between p-3 md:p-6">
   <div id="hud" class="hidden flex justify-between items-start w-full">
@@ -58,7 +58,7 @@
         <p>↔️ Swipe ← / → to change lanes</p>
         <p>⬆️ Swipe up to jump potholes, dogs &amp; trays</p>
         <p>⬇️ Swipe down to slide under awnings</p>
-        <p>🚐 Dodge trotros, potholes, pick a clear lane</p>
+        <p>🚐 Dodge trotros: pick a clear lane</p>
       </div>
       <button id="start-btn" class="tr-btn primary">Start Run</button>
     </div>
@@ -82,7 +82,7 @@
       <button id="quit-btn" class="tr-btn danger mt-3" style="font-size:14px;padding:11px">Quit to Menu</button>
     </div>
   </div>
-  <div id="bottom-controls" class="hidden flex justify-end pb-2"><button id="pause-btn" class="interactive pause"><i></i><i></i></button></div>
+  <div id="bottom-controls" class="hidden flex justify-end pb-8 md:pb-2"><button id="pause-btn" class="interactive pause"><i></i><i></i></button></div>
 </div>
 <script>
 'use strict';
