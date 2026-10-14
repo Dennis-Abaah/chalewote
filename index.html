@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Chale Wote: Art & Escape</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2a3322">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Chale Wote">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -35,6 +42,11 @@
 .stat{padding:12px;text-align:center}.stat small{display:block;color:#e8e3a8;font-size:10px;letter-spacing:.16em;text-transform:uppercase;text-shadow:0 2px 2px #000;margin-bottom:2px}
 .veil{background:radial-gradient(circle at 50% 40%,rgba(30,55,20,.6),rgba(4,9,4,.9));backdrop-filter:blur(6px)}
 #start-screen{background:linear-gradient(180deg,rgba(6,12,5,.1) 0%,rgba(6,12,5,.18) 38%,rgba(6,12,5,.85) 100%),url("./jamestown.jpg") center top/cover no-repeat,url("./jamestown.jpeg") center top/cover no-repeat,url("./jamestown.png") center top/cover no-repeat,url("./jamestown.webp") center top/cover no-repeat;background-color:#1b2a14;backdrop-filter:none;align-items:center;padding-bottom:0}
+.round-btn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--grain),radial-gradient(circle at 35% 28%,#9aa585,#4d5941 60%,#2c3524);border:3px solid #d9a521;box-shadow:inset 0 3px 5px #ffffff55,inset 0 -6px 10px #0008,0 6px 14px #000c;z-index:5}
+.round-btn:active{transform:scale(.93)}.round-btn svg{filter:drop-shadow(0 0 5px #ffc83a88)}#snd-btn{left:14px}#install-btn{right:14px}
+.rng{-webkit-appearance:none;appearance:none;display:block;width:100%;height:18px;border-radius:10px;background:linear-gradient(90deg,#ffd24a var(--v,50%),#161c11 var(--v,50%));border:3px solid #6d7a58;box-shadow:inset 0 0 6px #000;outline:none;touch-action:pan-x}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#e8a012 60%,#a86300);border:3px solid #5a3a00;box-shadow:0 0 8px #ffc83a}
+.rng::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#e8a012 60%,#a86300);border:3px solid #5a3a00}
 </style>
 </head>
 <body class="relative w-screen h-[100dvh] overflow-hidden">
@@ -49,6 +61,8 @@
     </div>
   </div>
   <div id="start-screen" class="interactive veil absolute inset-0 flex items-center justify-center p-5 z-30">
+    <button id="snd-btn" class="round-btn interactive" aria-label="Sound settings"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#ffe27a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5v5h4l5 4v-13l-5 4z" fill="#e8a012"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/><path id="snd-slash" d="M4 4l16 16" stroke="#ff6b5a" style="display:none"/></svg></button>
+    <button id="install-btn" class="round-btn interactive" aria-label="Install game"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#ffe27a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11M7.5 10.5l4.5 4.5 4.5-4.5M5 19.5h14"/></svg></button>
     <div class="max-w-md w-full stone tablet text-center" style="padding:18px">
       <div class="chip stone inline-block mb-3" style="border-radius:999px">JAMESTOWN, ACCRA</div>
       <h1 class="num gold text-5xl md:text-6xl">CHALE WOTE</h1>
@@ -61,6 +75,22 @@
         <p>🚐 Dodge trotros: pick a clear lane</p>
       </div>
       <button id="start-btn" class="tr-btn primary">Start Run</button>
+    </div>
+  </div>
+  <div id="settings-screen" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-40">
+    <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
+      <h2 class="num gold text-3xl">SOUND</h2><div class="rule"></div>
+      <button id="mute-btn" class="tr-btn primary" style="margin-bottom:16px">Sound: On</button>
+      <div class="text-left" style="margin-bottom:16px"><div class="how"><p class="flex justify-between"><span>🎵 Music</span><b id="music-pct">70%</b></p></div><input id="music-vol" type="range" min="0" max="100" class="rng" style="margin-top:10px"></div>
+      <div class="text-left" style="margin-bottom:20px"><div class="how"><p class="flex justify-between"><span>🔊 Effects</span><b id="sfx-pct">80%</b></p></div><input id="sfx-vol" type="range" min="0" max="100" class="rng" style="margin-top:10px"></div>
+      <button id="settings-close" class="tr-btn">Done</button>
+    </div>
+  </div>
+  <div id="info-screen" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-40">
+    <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
+      <h2 id="info-title" class="num gold text-2xl">INSTALL</h2><div class="rule"></div>
+      <div class="how text-left mb-4"><p id="info-body" class="text-sm"></p></div>
+      <button id="info-ok" class="tr-btn primary">OK</button>
     </div>
   </div>
   <div id="gameover-screen" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-30">
@@ -92,10 +122,10 @@ class SoundManager{
  init(){try{if(!this.ctx)this.ctx=new(window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==='suspended')this.ctx.resume();Object.values(this.audio).forEach(a=>a.load())}catch(e){}}
  mp3(a){if(this.muted||!a)return;try{a.pause();a.currentTime=0;const p=a.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
  dodge(){this.mp3(Math.random()<.5?this.audio.dodge1:this.audio.dodge2)}
- tone(f1,f2,d,type='sine'){if(!this.ctx||this.muted)return;try{const o=this.ctx.createOscillator(),g=this.ctx.createGain(),t=this.ctx.currentTime;o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(1,f2),t+d);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+d)}catch(e){}}
+ tone(f1,f2,d,type='sine'){if(!this.ctx||this.muted)return;try{const o=this.ctx.createOscillator(),g=this.ctx.createGain(),t=this.ctx.currentTime;o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(1,f2),t+d);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(this.dest());o.start(t);o.stop(t+d)}catch(e){}}
  jump(){this.tone(180,500,.16)} coin(){
   if(this.muted)return;
-  if(this.coinOk){try{const a=this.audio.coin.cloneNode();a.volume=.9;const p=a.play();if(p&&p.catch)p.catch(()=>this.chime());return}catch(e){}}
+  if(this.coinOk){try{const a=this.audio.coin.cloneNode();a.volume=Math.min(1,this.vol.sfx*1.1);const p=a.play();if(p&&p.catch)p.catch(()=>this.chime());return}catch(e){}}
   this.chime();
  }
  menuPlay(ok){if(this.muted||!this.menu)return;try{const p=this.menu.play();if(p&&p.then)p.then(()=>{if(ok)ok()}).catch(()=>{})}catch(e){}}
@@ -105,7 +135,7 @@ class SoundManager{
  chime(){if(!this.ctx||this.muted)return;try{if(this.ctx.state==='suspended')this.ctx.resume();const t=this.ctx.currentTime;
   [[988,0],[1319,.08],[1760,.16]].forEach(([f,d],i)=>{const o=this.ctx.createOscillator(),o2=this.ctx.createOscillator(),g=this.ctx.createGain();o.type='triangle';o2.type='sine';o.frequency.value=f;o2.frequency.value=f*2.01;
    g.gain.setValueAtTime(.0001,t+d);g.gain.exponentialRampToValueAtTime(i===2?.3:.24,t+d+.01);g.gain.exponentialRampToValueAtTime(.001,t+d+(i===2?.45:.22));
-   o.connect(g);o2.connect(g);g.connect(this.ctx.destination);o.start(t+d);o2.start(t+d);o.stop(t+d+.5);o2.stop(t+d+.5)})}catch(e){}}
+   o.connect(g);o2.connect(g);g.connect(this.dest());o.start(t+d);o2.start(t+d);o.stop(t+d+.5);o2.stop(t+d+.5)})}catch(e){}}
  crash(){if(!this.muted){const a=this.audio.die;try{a.pause();a.currentTime=0;const p=a.play();if(p&&p.catch)p.catch(()=>this.tone(140,25,.45,'sawtooth'));return}catch(e){}}this.tone(140,25,.45,'sawtooth')}
 }
 const sound=new SoundManager();
@@ -377,6 +407,41 @@ function animate(){
  renderer.render(scene,camera)
 }
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const $=id=>document.getElementById(id);
+sound.vol={music:.7,sfx:.8};
+sound.dest=function(){if(!this.mg){this.mg=this.ctx.createGain();this.mg.connect(this.ctx.destination)}this.mg.gain.value=this.vol.sfx/.8;return this.mg};
+sound.applyVol=function(){this.menu.volume=this.vol.music*.7;this.music.volume=this.vol.music*.6;Object.values(this.audio).forEach(a=>a.volume=this.vol.sfx);if(this.mg)this.mg.gain.value=this.vol.sfx/.8};
+sound.save=function(){try{localStorage.setItem('cw_snd',JSON.stringify({m:this.muted,mu:this.vol.music,sf:this.vol.sfx}))}catch(e){}};
+sound.setMuted=function(m){this.muted=m;if(m){this.menuPause();this.musicPause()}else if(state===State.MENU)this.menuPlay();else if(state===State.PLAYING)this.musicPlay()};
+try{const d=JSON.parse(localStorage.getItem('cw_snd')||'null');if(d){sound.muted=!!d.m;if(typeof d.mu==='number')sound.vol.music=Math.min(1,Math.max(0,d.mu));if(typeof d.sf==='number')sound.vol.sfx=Math.min(1,Math.max(0,d.sf))}}catch(e){}
+sound.applyVol();
+function syncSound(){
+ const mu=Math.round(sound.vol.music*100),sf=Math.round(sound.vol.sfx*100);
+ $('music-vol').value=mu;$('sfx-vol').value=sf;$('music-vol').style.setProperty('--v',mu+'%');$('sfx-vol').style.setProperty('--v',sf+'%');
+ $('music-pct').textContent=mu+'%';$('sfx-pct').textContent=sf+'%';
+ const b=$('mute-btn');b.textContent=sound.muted?'Sound: Off':'Sound: On';b.className='tr-btn '+(sound.muted?'danger':'primary');b.style.marginBottom='16px';
+ $('snd-slash').style.display=sound.muted?'block':'none';
+}
+syncSound();
+$('snd-btn').addEventListener('click',()=>{sound.init();syncSound();$('settings-screen').classList.remove('hidden')});
+$('settings-close').addEventListener('click',()=>$('settings-screen').classList.add('hidden'));
+$('mute-btn').addEventListener('click',()=>{sound.init();sound.setMuted(!sound.muted);sound.save();syncSound()});
+$('music-vol').addEventListener('input',e=>{sound.vol.music=e.target.value/100;if(sound.muted&&e.target.value>0)sound.setMuted(false);sound.applyVol();sound.save();syncSound();if(state===State.MENU)sound.menuPlay()});
+$('sfx-vol').addEventListener('input',e=>{sound.vol.sfx=e.target.value/100;if(sound.muted&&e.target.value>0)sound.setMuted(false);sound.applyVol();sound.save();syncSound()});
+$('sfx-vol').addEventListener('change',()=>{sound.init();sound.chime()});
+// ---- install as an app (PWA) ----
+let deferredPrompt=null;const installBtn=$('install-btn');
+function info(t,b){$('info-title').textContent=t;$('info-body').textContent=b;$('info-screen').classList.remove('hidden')}
+$('info-ok').addEventListener('click',()=>$('info-screen').classList.add('hidden'));
+if(matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)installBtn.style.display='none';
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e});
+addEventListener('appinstalled',()=>{deferredPrompt=null;installBtn.style.display='none'});
+installBtn.addEventListener('click',async()=>{
+ if(deferredPrompt){const p=deferredPrompt;deferredPrompt=null;p.prompt();try{await p.userChoice}catch(e){}return}
+ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ info('Install Chale Wote',ios?"In Safari, tap the Share button, then choose 'Add to Home Screen'.":"Open your browser menu and choose 'Install app' or 'Add to Home screen'. Installing only works when the game is opened from its https:// web address, not from a local file.");
+});
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 const evs=['pointerdown','touchstart','keydown'],unlockMenu=e=>{if(state!==State.MENU||(e.target&&e.target.closest&&e.target.closest('#start-btn')))return;sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)))};
 evs.forEach(t=>addEventListener(t,unlockMenu));sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)));
 resetGame();updateRoad();animate();
