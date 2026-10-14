@@ -47,6 +47,8 @@
 .rng{-webkit-appearance:none;appearance:none;display:block;width:100%;height:18px;border-radius:10px;background:linear-gradient(90deg,#ffd24a var(--v,50%),#161c11 var(--v,50%));border:3px solid #6d7a58;box-shadow:inset 0 0 6px #000;outline:none;touch-action:pan-x}
 .rng::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#e8a012 60%,#a86300);border:3px solid #5a3a00;box-shadow:0 0 8px #ffc83a}
 .rng::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#e8a012 60%,#a86300);border:3px solid #5a3a00}
+.pw{display:none;flex-direction:column;align-items:center;gap:3px;width:54px;padding:5px 4px 6px}.pw svg{filter:drop-shadow(0 0 5px #0009)}
+.pwbar{width:100%;height:6px;border-radius:4px;background:#161c11;border:1px solid #000;overflow:hidden}.pwbar i{display:block;height:100%;width:100%;background:linear-gradient(180deg,#ffe27a,#e8a012);box-shadow:0 0 6px #ffc83a}
 </style>
 </head>
 <body class="relative w-screen h-[100dvh] overflow-hidden">
@@ -58,6 +60,11 @@
       <div class="stone slab"><span class="gemdot"></span><span id="score-val" class="num gold text-3xl">0</span></div>
       <div class="stone slab" style="min-width:130px"><span class="gem"></span><span id="coins-val" class="num gold text-2xl">0</span></div>
       <div class="stone chip">JAMESTOWN · <b id="distance-val">0</b>m</div>
+    </div>
+    <div id="pw-hud" style="position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 158px);transform:translateX(-50%);display:flex;gap:8px">
+      <div id="pw-jet" class="stone pw"><svg viewBox="0 0 24 24" width="26" height="26"><rect x="4" y="3" width="6" height="14" rx="3" fill="#ce1126"/><rect x="14" y="3" width="6" height="14" rx="3" fill="#006b3f"/><rect x="10" y="7" width="4" height="6" fill="#fcd116"/><path d="M7 18l0 4M17 18l0 4" stroke="#ffa11a" stroke-width="2.4" stroke-linecap="round"/></svg><div class="pwbar"><i></i></div></div>
+      <div id="pw-flag" class="stone pw"><svg viewBox="0 0 24 24" width="26" height="26"><rect x="4" y="2" width="2" height="20" fill="#e0a419"/><rect x="6" y="3" width="14" height="4" fill="#ce1126"/><rect x="6" y="7" width="14" height="4" fill="#fcd116"/><rect x="6" y="11" width="14" height="4" fill="#006b3f"/></svg><div class="pwbar"><i></i></div></div>
+      <div id="pw-magnet" class="stone pw"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M5 3v9a7 7 0 0014 0V3h-4.5v9a2.5 2.5 0 01-5 0V3z" fill="#dc2626"/><rect x="5" y="3" width="4.5" height="4" fill="#e5e7eb"/><rect x="14.5" y="3" width="4.5" height="4" fill="#e5e7eb"/></svg><div class="pwbar"><i></i></div></div>
     </div>
   </div>
   <div id="start-screen" class="interactive veil absolute inset-0 flex items-center justify-center p-5 z-30">
@@ -327,7 +334,7 @@ class Obstacle{
 }
 function pickObstacleType(){const r=Math.random();return r<.24?'pothole':r<.43?'dog':r<.62?'tray':r<.81?'awning':'trotro'}
 class Collectible{
- constructor(z,lane=Math.floor(Math.random()*3)-1){this.lane=lane;this.group=new THREE.Group();const coin=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.08,16),M.gold);coin.rotation.x=Math.PI/2;this.group.add(coin);this.group.position.set(lane*laneWidth+routeX(z),1.05,z);scene.add(this.group);collectibles.push(this)}
+ constructor(z,lane=Math.floor(Math.random()*3)-1,y=1.05){this.lane=lane;this.y=y;this.group=new THREE.Group();const coin=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.08,16),M.gold);coin.rotation.x=Math.PI/2;this.group.add(coin);this.group.position.set(lane*laneWidth+routeX(z),y,z);scene.add(this.group);collectibles.push(this)}
  destroy(){scene.remove(this.group)}
 }
 function occupiedLanesForPattern(count){
@@ -341,16 +348,79 @@ function spawnEntities(){
  lanes.forEach(lane=>new Obstacle(z+rand(-1.5,1.5),lane));
  if(progress>.2&&Math.random()<.18){const availableLanes=[-1,0,1].filter(l=>!lanes.includes(l));if(availableLanes.length){const lane=availableLanes[Math.floor(Math.random()*availableLanes.length)];new Obstacle(z-15,lane)}}
  if(Math.random()<.58){const free=[-1,0,1].filter(l=>!lanes.includes(l));new Collectible(z+rand(8,17),free.length?free[Math.floor(Math.random()*free.length)]:Math.floor(Math.random()*3)-1)}
+ if(!powerups.length&&pw.jet<=0&&distance>100&&Math.random()<.17){const free=[-1,0,1].filter(l=>!lanes.includes(l)),r=Math.random();new Pickup(z-6,free.length?free[Math.floor(Math.random()*free.length)]:0,r<.4?'magnet':r<.75?'flag':'jet')}
  spawnCount++;const gap=(Math.max(24,43-progress*13)+Math.random()*9)*.75;nextSpawnDistance=distance+gap;
 }
-function clearEntities(){obstacles.forEach(o=>o.destroy());obstacles.length=0;collectibles.forEach(c=>c.destroy());collectibles.length=0}
+// ================= POWER-UPS: jetpack, flag bounce, magnet (each has a timer) =================
+const PW={jet:{dur:8},flag:{dur:10},magnet:{dur:12}},pw={jet:0,flag:0,magnet:0},powerups=[],_tv=new THREE.Vector3(),hudPw={};let nextAir=0,airLane=0;
+const flagTex=(()=>{const c=document.createElement('canvas');c.width=192;c.height=128;const x=c.getContext('2d');x.fillStyle='#ce1126';x.fillRect(0,0,192,43);x.fillStyle='#fcd116';x.fillRect(0,43,192,42);x.fillStyle='#006b3f';x.fillRect(0,85,192,43);x.fillStyle='#000';x.beginPath();for(let i=0;i<10;i++){const r=i%2?8.5:22,a=-Math.PI/2+i*Math.PI/5;x.lineTo(96+Math.cos(a)*r,64+Math.sin(a)*r)}x.closePath();x.fill();return new THREE.CanvasTexture(c)})();
+const pmk=(g,m,x=0,y=0,z=0)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;return o};
+const pSteel=new THREE.MeshStandardMaterial({color:0xcfd5dc,roughness:.3,metalness:.8}),pGold=mat(0xe0a419,.3,.6),pRed=new THREE.MeshStandardMaterial({color:0xdc2626,roughness:.35,metalness:.3});
+function makeFlag(w,h){const geo=new THREE.PlaneGeometry(w,h,12,4);geo.translate(w/2,0,0);geo.userData.base=geo.attributes.position.array.slice();geo.userData.w=w;return new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:flagTex,side:THREE.DoubleSide}))}
+function waveFlag(m,t,amp){const a=m.geometry.attributes.position.array,b=m.geometry.userData.base,w=m.geometry.userData.w;for(let i=0;i<a.length;i+=3){const u=b[i]/w;a[i+2]=Math.sin(u*9-t*9)*amp*u;a[i+1]=b[i+1]+Math.cos(u*6-t*7)*.015*u}m.geometry.attributes.position.needsUpdate=true}
+class Pickup{
+ constructor(z,lane,type){
+  this.lane=lane;this.type=type;const g=this.group=new THREE.Group(),n=this.inner=new THREE.Group(),col={jet:0xffd24a,flag:0x2fe36b,magnet:0x4aa8ff}[type];
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.045,8,36),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.8}));ring.position.y=1.15;g.add(ring,n);
+  if(type==='jet'){for(const s of [-1,1])n.add(pmk(new THREE.CylinderGeometry(.14,.14,.7,14),pSteel,s*.2,0,0),pmk(new THREE.SphereGeometry(.14,12,8),pSteel,s*.2,.35,0),pmk(new THREE.CylinderGeometry(.08,.11,.12,10),pGold,s*.2,-.4,0));const pn=new THREE.Mesh(new THREE.PlaneGeometry(.56,.38),new THREE.MeshBasicMaterial({map:flagTex,side:THREE.DoubleSide}));pn.position.z=.17;n.add(pn);n.scale.setScalar(1.2)}
+  else if(type==='flag'){n.add(pmk(new THREE.CylinderGeometry(.03,.03,1.5,8),pGold));const f=makeFlag(.85,.55);f.position.set(0,.45,0);n.add(f);this.flagMesh=f;n.scale.setScalar(1.05)}
+  else{n.add(pmk(new THREE.TorusGeometry(.32,.11,12,24,Math.PI),pRed,0,.06,0),pmk(new THREE.BoxGeometry(.22,.3,.22),pSteel,.32,-.1,0),pmk(new THREE.BoxGeometry(.22,.3,.22),pSteel,-.32,-.1,0));n.scale.setScalar(1.5)}
+  n.position.y=1.15;g.position.set(lane*laneWidth+routeX(z),0,z);scene.add(g);powerups.push(this);
+ }
+}
+function spawnAir(){if(distance<nextAir)return;airLane=Math.max(-1,Math.min(1,airLane+Math.floor(Math.random()*3)-1));for(let i=0;i<6;i++)new Collectible(-52-i*2.4,airLane,4.3+Math.sin(i/5*Math.PI)*.6);nextAir=distance+15}
+function updatePower(dt,t){
+ for(const k in pw)if(pw[k]>0)pw[k]=Math.max(0,pw[k]-dt);
+ for(let i=powerups.length-1;i>=0;i--){const p=powerups[i],g=p.group;g.position.z+=gameSpeed*30*dt;g.position.x=p.lane*laneWidth+routeX(g.position.z);g.rotation.y=-Math.atan(roadSlope(distance-g.position.z));p.inner.rotation.y+=2.4*dt;p.inner.position.y=1.15+Math.sin(t*3)*.1;if(p.flagMesh)waveFlag(p.flagMesh,t,.08);
+  if(Math.abs(g.position.z)<2.2&&p.lane===player.lane&&player.group.position.y<2.6&&!(pw.jet>0)){pw[p.type]=PW[p.type].dur;if(p.type==='jet'){nextAir=0;airLane=player.lane}sound.power();scene.remove(g);powerups.splice(i,1)}
+  else if(g.position.z>12){scene.remove(g);powerups.splice(i,1)}}
+ if(pw.jet>2.6)spawnAir();
+ for(const k in PW){const el=hudPw[k]||(hudPw[k]=document.getElementById('pw-'+k)),v=pw[k];el.style.display=v>0?'flex':'none';if(v>0){el.querySelector('i').style.width=(v/PW[k].dur*100)+'%';el.style.opacity=v<2.5&&Math.floor(t*6)%2?.4:1}}
+}
+sound.boing=function(){this.tone(150,420,.15)};
+sound.power=function(){this.tone(330,1320,.28,'triangle');setTimeout(()=>this.chime(),130)};
+(()=>{
+ const jp=new THREE.Group(),jpFl=[],fire=new THREE.MeshBasicMaterial({color:0xffa11a}),fire2=new THREE.MeshBasicMaterial({color:0xfff2a0});
+ for(const s of [-1,1]){jp.add(pmk(new THREE.CylinderGeometry(.085,.085,.5,12),pSteel,s*.11,.4,.44),pmk(new THREE.SphereGeometry(.085,10,8),pSteel,s*.11,.65,.44),pmk(new THREE.CylinderGeometry(.05,.07,.1,10),pGold,s*.11,.13,.44));
+  const f=pmk(new THREE.ConeGeometry(.06,.4,8),fire,s*.11,-.1,.44),f2=pmk(new THREE.ConeGeometry(.032,.26,8),fire2,s*.11,-.04,.44);f.rotation.x=f2.rotation.x=Math.PI;jp.add(f,f2);jpFl.push(f,f2)}
+ const pn=new THREE.Mesh(new THREE.PlaneGeometry(.34,.24),new THREE.MeshBasicMaterial({map:flagTex,side:THREE.DoubleSide}));pn.position.set(0,.45,.55);jp.add(pn);
+ const fg=new THREE.Group();fg.position.y=-.29;fg.add(pmk(new THREE.CylinderGeometry(.018,.018,.9,6),pGold,0,-.4,0));const fm=makeFlag(.5,.32);fm.position.set(0,-.7,0);fm.rotation.x=Math.PI;fg.add(fm);
+ const aura=new THREE.Mesh(new THREE.RingGeometry(.85,1.05,40),new THREE.MeshBasicMaterial({color:0xffd24a,transparent:true,opacity:.65,side:THREE.DoubleSide,depthWrite:false}));aura.rotation.x=-Math.PI/2;aura.visible=false;scene.add(aura);
+ Object.assign(player,{jp,jpFl,fg,fgFlag:fm,aura});
+ jp.scale.setScalar(.5);jp.position.set(0,.22,.14);fg.scale.setScalar(.4);aura.scale.setScalar(.75);
+ const att=(o,p,on)=>{if(on){if(o.parent!==p)p.add(o)}else if(o.parent)o.parent.remove(o)};
+ const _u=Player.prototype.update,_j=Player.prototype.jump,_s=Player.prototype.slide;
+ Player.prototype.jump=function(){if(pw.jet>0||this.fall)return;_j.call(this)};
+ Player.prototype.slide=function(){if(pw.jet>0||this.fall)return;_s.call(this)};
+ Player.prototype.resetFx=function(){this.fall=false;this.wasJet=false;this.inv=0;this.ov=[];att(this.jp,this.up,false);att(this.fg,this.J[7],false);this.aura.visible=false};
+ Player.prototype.update=function(dt,t){
+  _u.call(this,dt,t);
+  const jet=pw.jet>0,bn=pw.flag>0&&!jet,g=this.group,k=Math.min(1,12*dt);
+  if(jet){this.jumping=false;this.sliding=false;this.yVelocity=0;this.fall=false;this.wasJet=true;this.inv=1.6;g.position.y+=(3.4+Math.sin(t*5)*.1-g.position.y)*Math.min(1,5*dt)}
+  else{
+   if(this.wasJet){this.wasJet=false;this.fall=g.position.y>.05}
+   this.inv=Math.max(0,(this.inv||0)-dt);
+   if(this.fall){g.position.y=Math.max(0,g.position.y-Math.max(2.5,g.position.y*2.4)*dt);if(g.position.y<=0)this.fall=false}
+   else if(bn&&!this.jumping&&!this.sliding){this.jumping=true;this.yVelocity=14;sound.boing()}
+  }
+  const O=[...this.J,this.rig,this.up],ov=this.ov||(this.ov=[]);let T=null;
+  if(jet||this.fall)T=[-.35,-.5,-.5,-.8,.6,.3,.6,.3,-.3,-.1];else if(bn)T=[null,null,null,null,null,null,3.0,.1,null,null];
+  for(let i=0;i<10;i++){const v=T?T[i]:null;if(v==null){ov[i]=null;continue}if(ov[i]==null)ov[i]=O[i].rotation.x;ov[i]+=(v-ov[i])*k;O[i].rotation.x=ov[i]}
+  att(this.jp,this.up,jet||this.fall);att(this.fg,this.J[7],bn);
+  if(jet)this.jpFl.forEach(f=>f.scale.y=.8+Math.random()*.9);
+  if(bn)waveFlag(this.fgFlag,t,.07);
+  const col=jet||this.fall?0xffd24a:bn?0x2fe36b:pw.magnet>0?0x4aa8ff:0,a=this.aura;a.visible=!!col;
+  if(col){a.material.color.setHex(col);a.position.set(g.position.x,.06,g.position.z);const sc=1+Math.sin(t*6)*.08;a.scale.set(sc*.75,sc*.75,1)}
+ };
+})();
+function clearEntities(){obstacles.forEach(o=>o.destroy());obstacles.length=0;collectibles.forEach(c=>c.destroy());collectibles.length=0;powerups.forEach(p=>scene.remove(p.group));powerups.length=0}
 function haptics(){if(navigator.vibrate)navigator.vibrate([100,50,170])}
 function startGame(){
  resetGame();state=State.PLAYING;sound.menuPause();sound.musicPlay(true);document.getElementById('start-screen').classList.add('hidden');document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.remove('hidden');document.getElementById('bottom-controls').classList.remove('hidden');
 }
 function resetGame(){
  score=0;coins=0;distance=0;gameSpeed=.72;nextSpawnDistance=0;spawnCount=0;clearEntities();
- player.lane=0;player.group.position.set(routeX(0),0,0);player.jumping=false;player.sliding=false;player.yVelocity=0;player.slideTimer=0;player.reset();
+ player.lane=0;player.group.position.set(routeX(0),0,0);player.jumping=false;player.sliding=false;player.yVelocity=0;player.slideTimer=0;player.reset();player.resetFx();pw.jet=pw.flag=pw.magnet=0;nextAir=0;airLane=0;
  new Collectible(-11,-1);new Collectible(-17,1);
  document.getElementById('score-val').textContent='0';document.getElementById('coins-val').textContent='0';document.getElementById('distance-val').textContent='0';
 }
@@ -381,17 +451,17 @@ function animate(){
   document.getElementById('score-val').textContent=Math.floor(score);document.getElementById('coins-val').textContent=coins;document.getElementById('distance-val').textContent=Math.floor(distance);
   document.getElementById('meter-fill').style.height=(distance%100)+'%';updateScenery(dt);updateRoad();player.update(dt,t);
   camera.position.x+=(player.group.position.x*.48-camera.position.x)*Math.min(1,3.5*dt);
-  camera.position.z=7;camera.lookAt(player.group.position.x*.35+roadCenter(distance)*.15,1.25,-4);
-  spawnEntities();
+  camera.position.z=7;camera.position.y+=(4+player.group.position.y*.45-camera.position.y)*Math.min(1,4*dt);camera.lookAt(player.group.position.x*.35+roadCenter(distance)*.15,1.25+player.group.position.y*.35,-4);
+  spawnEntities();updatePower(dt,t);
   const pBox=new THREE.Box3().setFromObject(player.group);
   for(let i=obstacles.length-1;i>=0;i--){
    const o=obstacles[i];o.group.position.z+=gameSpeed*30*dt;o.group.position.x=o.lane*laneWidth+routeX(o.group.position.z);
    o.group.rotation.y=-Math.atan(roadSlope(distance-o.group.position.z));
    if(!o.hasDodged&&o.group.position.z>1){o.hasDodged=true;sound.dodge()}
-   if(Math.abs(o.group.position.z)<2.3){
+   if(Math.abs(o.group.position.z)<2.3&&!(player.inv>0)){
     const laneHit=Math.abs((o.lane-player.lane)*laneWidth)<1.15;
     if(laneHit){const boxNow=new THREE.Box3().setFromObject(o.group);if(pBox.intersectsBox(boxNow)){
-      const passed=(o.pass==='jump'&&player.jumping)||(o.pass==='slide'&&player.sliding);
+      const passed=(o.pass==='jump'&&player.jumping)||(o.pass==='slide'&&player.sliding)||(o.pass==='slide'&&pw.flag>0&&player.jumping);
       if(!passed&&o.pass!=='dodge'){gameOver();break}
       if(o.pass==='dodge'){gameOver();break}
     }}
@@ -399,8 +469,12 @@ function animate(){
    if(o.group.position.z>12){o.destroy();obstacles.splice(i,1)}
   }
   if(state===State.PLAYING)for(let i=collectibles.length-1;i>=0;i--){
-   const c=collectibles[i];c.group.position.z+=gameSpeed*30*dt;c.group.position.x=c.lane*laneWidth+routeX(c.group.position.z);c.group.rotation.y+=3.8*dt;
-   if(Math.abs(c.group.position.z)<2.1&&Math.abs(c.lane-player.lane)===0){coins++;score+=100;sound.coin();c.destroy();collectibles.splice(i,1)}
+   const c=collectibles[i];c.group.rotation.y+=3.8*dt;
+   if(!c.pulled&&pw.magnet>0&&c.group.position.z>-18&&c.group.position.z<3)c.pulled=true;
+   let got=false;const tp=player.group.position,kk=Math.min(1,9*dt);
+   if(c.pulled){const p=c.group.position;p.x+=(tp.x-p.x)*kk;p.y+=(tp.y+1.05-p.y)*kk;p.z+=(0-p.z)*kk;got=_tv.set(tp.x,tp.y+1.05,0).distanceTo(p)<.9}
+   else{c.group.position.z+=gameSpeed*30*dt;c.group.position.x=c.lane*laneWidth+routeX(c.group.position.z);got=Math.abs(c.group.position.z)<2.1&&c.lane===player.lane&&Math.abs(c.y-(tp.y+1.05))<2.0}
+   if(got){coins++;score+=100;sound.coin();c.destroy();collectibles.splice(i,1)}
    else if(c.group.position.z>12){c.destroy();collectibles.splice(i,1)}
   }
  }
