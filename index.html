@@ -11,15 +11,6 @@
 <meta name="apple-mobile-web-app-title" content="Chale Wote">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-9BVZR700VB"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-9BVZR700VB');
-</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -58,6 +49,14 @@
 .rng::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#e8a012 60%,#a86300);border:3px solid #5a3a00}
 .pw{display:none;flex-direction:column;align-items:center;gap:3px;width:54px;padding:5px 4px 6px}.pw svg{filter:drop-shadow(0 0 5px #0009)}
 .pwbar{width:100%;height:6px;border-radius:4px;background:#161c11;border:1px solid #000;overflow:hidden}.pwbar i{display:block;height:100%;width:100%;background:linear-gradient(180deg,#ffe27a,#e8a012);box-shadow:0 0 6px #ffc83a}
+.cedi{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 15px Outfit,Arial,sans-serif;color:#5a3a00;background:radial-gradient(circle at 35% 30%,#fff3b0,#f2b616 60%,#a86300);border:2px solid #5a3a00;box-shadow:0 0 8px #ffcb4a99;flex:none}
+#char-view{height:min(40vh,320px);border-radius:12px;background:radial-gradient(circle at 50% 35%,#2f4a26,#0b140a);box-shadow:inset 0 0 14px #000,inset 0 0 0 2px #6d7a58;overflow:hidden;touch-action:none;cursor:grab}
+#char-view canvas{display:block;width:100%;height:100%}
+.carrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;font:900 28px/1 Outfit,Arial,sans-serif;color:#ffe27a;padding-bottom:4px;display:flex;align-items:center;justify-content:center;background:var(--grain),radial-gradient(circle at 35% 28%,#9aa585,#4d5941 60%,#2c3524);border:3px solid #d9a521;box-shadow:inset 0 3px 5px #ffffff55,inset 0 -6px 10px #0008,0 6px 14px #000c;z-index:3}
+.ctab{flex:1;padding:8px 4px;font-family:Cinzel,serif;font-weight:900;font-size:13px;letter-spacing:.08em;color:#e8e3a8;border-radius:10px;background:var(--grain),linear-gradient(180deg,#6a7658,#3e4833);border:2px solid #232a1c;text-shadow:0 2px 2px #000}
+.ctab.on{border-color:#e0a419;color:#fff3b0;box-shadow:0 0 12px #ffc83a88}
+#home-view canvas{display:block}
+#home-stage:before{content:"";position:absolute;inset:8% -14% 0;background:radial-gradient(ellipse at 50% 62%,rgba(255,210,74,.38),rgba(255,210,74,0) 66%);pointer-events:none}
 </style>
 </head>
 <body class="relative w-screen h-[100dvh] overflow-hidden">
@@ -67,7 +66,7 @@
     <div><div class="medal"><svg viewBox="0 0 24 24" width="40" height="40"><circle cx="15" cy="4.5" r="2.3" fill="#6bff8a"/><path d="M12 8.5l-3.5 2.5-2 4M12 8.5l3 3 3.5 1M12 8.5l-1 5 3.5 3 .5 4.5M11 13.5l-3.5 4.5-3.5.5" stroke="#6bff8a" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="meter"><div id="meter-fill"></div></div></div>
     <div class="flex flex-col gap-2 items-end">
       <div class="stone slab"><span class="gemdot"></span><span id="score-val" class="num gold text-3xl">0</span></div>
-      <div class="stone slab" style="min-width:130px"><span class="gem"></span><span id="coins-val" class="num gold text-2xl">0</span></div>
+      <div class="stone slab" style="min-width:130px"><span class="cedi">₵</span><span id="coins-val" class="num gold text-2xl">0</span></div>
       <div class="stone chip">JAMESTOWN · <b id="distance-val">0</b>m</div>
     </div>
     <div id="pw-hud" style="position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 158px);transform:translateX(-50%);display:flex;gap:8px">
@@ -79,18 +78,31 @@
   <div id="start-screen" class="interactive veil absolute inset-0 flex items-center justify-center p-5 z-30">
     <button id="snd-btn" class="round-btn interactive" aria-label="Sound settings"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#ffe27a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5v5h4l5 4v-13l-5 4z" fill="#e8a012"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/><path id="snd-slash" d="M4 4l16 16" stroke="#ff6b5a" style="display:none"/></svg></button>
     <button id="install-btn" class="round-btn interactive" aria-label="Install game"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#ffe27a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11M7.5 10.5l4.5 4.5 4.5-4.5M5 19.5h14"/></svg></button>
-    <div class="max-w-md w-full stone tablet text-center" style="padding:18px">
-      <div class="chip stone inline-block mb-3" style="border-radius:999px">JAMESTOWN, ACCRA</div>
+    <div id="home-title" style="position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 72px);text-align:center;pointer-events:none">
+      <div class="chip stone inline-block mb-2" style="border-radius:999px">JAMESTOWN, ACCRA</div>
       <h1 class="num gold text-5xl md:text-6xl">CHALE WOTE</h1>
-      <p class="text-sm mt-1" style="color:#e8e3a8;text-shadow:0 2px 2px #000">Art &amp; Escape in Historic Jamestown</p>
-      <div class="rule"></div>
-      <div class="how text-left grid grid-cols-2 gap-2 text-xs mb-3">
-        <p>↔️ Swipe ← / → to change lanes</p>
-        <p>⬆️ Swipe up to jump potholes, dogs &amp; trays</p>
-        <p>⬇️ Swipe down to slide under awnings</p>
-        <p>🚐 Dodge trotros: pick a clear lane</p>
-      </div>
-      <button id="start-btn" class="tr-btn primary">Start Run</button>
+      <p class="text-sm mt-1" style="color:#fff3c4;text-shadow:0 2px 4px #000">Art &amp; Escape in Historic Jamestown</p>
+    </div>
+    <div class="stone tablet text-center" style="position:absolute;left:14px;bottom:26px;width:calc(100% - 218px);max-width:300px;min-width:128px;padding:14px 12px">
+      <button id="start-btn" class="tr-btn primary" style="padding:14px 6px;font-size:15px;letter-spacing:.08em">Start Run</button>
+      <button id="how-btn" class="tr-btn" style="font-size:12px;padding:9px;margin-top:10px">How to Play</button>
+    </div>
+    <div id="home-stage" style="position:absolute;right:6px;bottom:18px;width:200px;height:310px">
+      <div id="home-view" style="position:relative;width:100%;height:100%"></div>
+      <div id="char-name" class="num gold" style="position:absolute;left:0;right:0;bottom:36px;text-align:center;font-size:20px;text-transform:uppercase;pointer-events:none">Keli</div>
+      <button id="char-btn" class="tr-btn" style="position:absolute;left:50%;transform:translateX(-50%);width:auto;bottom:2px;font-size:11px;padding:6px 20px;border-width:2px;border-radius:10px;letter-spacing:.1em">Select</button>
+    </div>
+  </div>
+  <div id="char-screen" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-4 z-40">
+    <div class="max-w-sm w-full stone tablet text-center" style="padding:16px;max-height:96vh;overflow:auto">
+      <h2 class="num gold text-2xl">CHOOSE RUNNER</h2><div class="rule" style="margin:8px auto 10px"></div>
+      <div style="position:relative"><div id="char-view"></div><button id="char-prev" class="carrow" style="left:6px">‹</button><button id="char-next" class="carrow" style="right:6px">›</button></div>
+      <div id="char-tabs" class="flex gap-2 mt-3"></div>
+      <h3 id="char-title" class="num gold text-3xl mt-2">KELI</h3>
+      <p id="char-desc" class="text-xs" style="color:#e8e3a8;text-shadow:0 2px 2px #000;margin:2px 0 6px"></p>
+      <p class="text-xs" style="color:#cfd6b0;margin-bottom:10px">Drag to turn · Tap to run</p>
+      <button id="char-use" class="tr-btn primary">Use Keli</button>
+      <button id="char-back" class="tr-btn mt-3" style="font-size:14px;padding:11px">Back</button>
     </div>
   </div>
   <div id="settings-screen" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-40">
@@ -105,7 +117,7 @@
   <div id="info-screen" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-40">
     <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
       <h2 id="info-title" class="num gold text-2xl">INSTALL</h2><div class="rule"></div>
-      <div class="how text-left mb-4"><p id="info-body" class="text-sm"></p></div>
+      <div class="how text-left mb-4"><p id="info-body" class="text-sm" style="white-space:pre-line"></p></div>
       <button id="info-ok" class="tr-btn primary">OK</button>
     </div>
   </div>
@@ -115,7 +127,7 @@
       <h2 class="num gold text-4xl md:text-5xl">RUN OVER</h2><div class="rule"></div>
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div class="stone stat"><small>Final Score</small><span id="go-score" class="num gold text-2xl">0</span></div>
-        <div class="stone stat"><small>Cowries</small><span id="go-coins" class="num gold text-2xl">0</span></div>
+        <div class="stone stat"><small>Cedis</small><span id="go-coins" class="num gold text-2xl">0</span></div>
       </div>
       <div class="stone stat mb-5 flex justify-between items-center px-5"><small style="margin:0">Distance Run</small><span id="go-distance" class="num gold text-xl">0m</span></div>
       <button id="restart-btn" class="tr-btn primary">Run Again</button>
@@ -343,7 +355,7 @@ class Obstacle{
 }
 function pickObstacleType(){const r=Math.random();return r<.24?'pothole':r<.43?'dog':r<.62?'tray':r<.81?'awning':'trotro'}
 class Collectible{
- constructor(z,lane=Math.floor(Math.random()*3)-1,y=1.05){this.lane=lane;this.y=y;this.group=new THREE.Group();const coin=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.08,16),M.gold);coin.rotation.x=Math.PI/2;this.group.add(coin);this.group.position.set(lane*laneWidth+routeX(z),y,z);scene.add(this.group);collectibles.push(this)}
+ constructor(z,lane=Math.floor(Math.random()*3)-1,y=1.05){this.lane=lane;this.y=y;this.group=new THREE.Group();const coin=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.08,16),coinMats);coin.rotation.x=Math.PI/2;this.group.add(coin);this.group.position.set(lane*laneWidth+routeX(z),y,z);scene.add(this.group);collectibles.push(this)}
  destroy(){scene.remove(this.group)}
 }
 function occupiedLanesForPattern(count){
@@ -360,6 +372,96 @@ function spawnEntities(){
  if(!powerups.length&&pw.jet<=0&&distance>100&&Math.random()<.17){const free=[-1,0,1].filter(l=>!lanes.includes(l)),r=Math.random();new Pickup(z-6,free.length?free[Math.floor(Math.random()*free.length)]:0,r<.4?'magnet':r<.75?'flag':'jet')}
  spawnCount++;const gap=(Math.max(24,43-progress*13)+Math.random()*9)*.75;nextSpawnDistance=distance+gap;
 }
+// ================= RUNNERS: Adwoa, Keli (Black Stars jersey), Nii =================
+const byId=id=>document.getElementById(id),once=f=>{let v;return()=>v||(v=f())};
+function ctex(draw,w=512,h=256){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=THREE.RepeatWrapping;t.offset.x=.5;t.anisotropy=4;return t}
+const star5=(x,cx,cy,r)=>{x.beginPath();for(let i=0;i<10;i++){const rr=i%2?r*.4:r,a=-Math.PI/2+i*Math.PI/5;x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr)}x.closePath();x.fill()};
+const printTex=once(()=>ctex((x,w,h)=>{x.fillStyle='#0b7a75';x.fillRect(0,0,w,h);for(let gy=0;gy<h;gy+=64)for(let gx=0;gx<w;gx+=64){const ox=(gy/64%2)*32;x.fillStyle='#f4a300';x.beginPath();x.arc(gx+ox+32,gy+32,23,0,7);x.fill();x.fillStyle='#d62828';x.beginPath();x.arc(gx+ox+32,gy+32,14,0,7);x.fill();x.fillStyle='#fff3c4';x.beginPath();x.arc(gx+ox+32,gy+32,5,0,7);x.fill();x.fillStyle='#7a2e8e';x.fillRect(gx+ox+4,gy+4,9,9)}}));
+const jerseyTex=once(()=>ctex((x,w,h)=>{x.fillStyle='#fcd116';x.fillRect(0,0,w,h);for(let i=0;i<w;i+=16){x.fillStyle='rgba(255,255,255,.08)';x.fillRect(i,0,8,h)}x.fillStyle='#ce1126';x.fillRect(0,h-26,w,11);x.fillStyle='#006b3f';x.fillRect(0,h-15,w,15);x.fillStyle='#111';star5(x,0,h*.38,40);star5(x,w,h*.38,40);x.textAlign='center';x.font='bold 32px Outfit,Arial,sans-serif';x.fillText('KELI',w/2,h*.28);x.font='bold 110px Outfit,Arial,sans-serif';x.fillText('10',w/2,h*.7)}));
+const teeTex=once(()=>ctex((x,w,h)=>{x.fillStyle='#f2efe6';x.fillRect(0,0,w,h);x.fillStyle='#111';star5(x,0,h*.36,26);star5(x,w,h*.36,26);x.fillStyle='#c8102e';x.fillRect(w/2-60,h*.2,120,8);x.fillStyle='#006b3f';x.fillRect(w/2-60,h*.2+12,120,8);x.fillStyle='#111';x.textAlign='center';x.font='bold 70px Outfit,Arial,sans-serif';x.fillText('233',w/2,h*.62)}));
+const CHARS={
+ adwoa:{name:'Adwoa',desc:'Ankara print dress · cornrow braids',skin:0x6b3d22,skinD:0x5a3219,hairC:0x120c08,hairS:'corn',lip:0x8a3b3b,nose:[.015,-.108],w:[.93,.92],rt:.185,rb:.15,sh:.23,hipX:.095,lim:.9,topTex:printTex,sleeveTex:printTex,sleeveLen:.12,bottom:'skirt',botTex:printTex,belt:true,earrings:true,shoe:0xffffff,sole:0xe8e2d0},
+ keli:{name:'Keli',desc:'Ghana Black Stars jersey · striped socks',skin:0x4a2a16,skinD:0x3d2210,hairC:0x0d0a08,hairS:'short',lip:0x5a2a22,w:[1,1],rt:.215,rb:.17,sh:.26,hipX:.1,lim:1,topTex:jerseyTex,sleeve:0xfcd116,sleeveLen:.13,trim:true,collar:0x006b3f,bottom:'shorts',botCol:0x111111,sock:true,shoe:0x15171a,sole:0xf2f2f2},
+ nii:{name:'Nii',desc:'Street style · cap, jeans & backpack',skin:0x7a4a2c,skinD:0x663d22,hairC:0x15100c,hairS:'cap',capC:0xc8102e,lip:0x6a3228,w:[1.07,1.06],rt:.225,rb:.185,sh:.27,hipX:.105,lim:1.05,topTex:teeTex,sleeve:0xf2efe6,sleeveLen:.13,collar:0xd8d4c8,bottom:'jeans',botCol:0x2c4f8a,bag:true,shoe:0xea580c,sole:0xffffff}
+};
+function buildHuman(c){
+ const MS=(col,r=.6,m=0)=>new THREE.MeshStandardMaterial({color:col,roughness:r,metalness:m}),TM=t=>new THREE.MeshStandardMaterial({map:t,roughness:.75});
+ const skin=MS(c.skin,.5),skinD=MS(c.skinD,.6),hairM=MS(c.hairC,.75),eyeW=MS(0xf4f1ea,.3),dk=MS(0x16110d,.5),lipM=MS(c.lip,.35),gold=MS(0xe0a419,.25,.8),white=MS(0xf4f4f4,.7),
+  topM=TM(c.topTex()),slM=c.sleeveTex?TM(c.sleeveTex()):MS(c.sleeve,.7),botM=c.botTex?TM(c.botTex()):MS(c.botCol,.8),shoeM=MS(c.shoe,.5),soleM=MS(c.sole,.8);
+ const mesh=(g,m,x=0,y=0,z=0)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;return o},
+  cyl=(a,b,h,m,x,y,z,seg=14)=>mesh(new THREE.CylinderGeometry(a,b,h,seg),m,x,y,z),
+  sph=(r,m,x,y,z,sx=1,sy=1,sz=1)=>{const o=mesh(new THREE.SphereGeometry(r,16,12),m,x,y,z);o.scale.set(sx,sy,sz);return o},
+  piv=(p,x,y,z)=>{const g=new THREE.Group();g.position.set(x,y,z);p.add(g);return g};
+ const rig=new THREE.Group();rig.position.y=.95;rig.scale.set(c.w[0],1,c.w[1]);const up=piv(rig,0,0,0);
+ const torso=cyl(c.rt,c.rb,.68,topM,0,.34,0,20);torso.scale.set(1.12,1,.7);up.add(torso,cyl(.055,.06,.1,skin,0,.72,0));
+ if(c.belt){const b=cyl(c.rb+.012,c.rb+.012,.035,gold,0,.03,0,20);b.scale.set(1.12,1,.7);up.add(b)}
+ if(c.collar){const o=mesh(new THREE.TorusGeometry(.082,.014,8,18),MS(c.collar,.6),0,.68,0);o.rotation.x=Math.PI/2;up.add(o)}
+ const head=piv(up,0,.88,0);
+ head.add(sph(.115,skin,0,0,0,.88,1.1,1),sph(.08,skin,0,-.055,-.03,.95,.85,.95),sph((c.nose||[.021,-.118])[0],skin,0,-.012,(c.nose||[.021,-.118])[1]),sph(.024,skinD,.102,0,0,.55,1,1),sph(.024,skinD,-.102,0,0,.55,1,1),sph(.03,lipM,0,-.05,-.1,1,.38,.5));
+ for(const s of [-1,1]){head.add(sph(.019,eyeW,s*.04,.014,-.098,1,.75,.5),sph(.0105,dk,s*.04,.014,-.108,1,1,.6));const br=mesh(new THREE.BoxGeometry(.05,.009,.01),hairM,s*.04,.043,-.104);br.rotation.z=-s*.15;head.add(br);if(c.earrings)head.add(sph(.014,gold,s*.108,-.032,0))}
+ const hc=mesh(new THREE.SphereGeometry(.123,16,10,0,Math.PI*2,0,Math.PI*.56),c.hairS==='corn'?MS(0x3b2214,.6):hairM,0,.012,.01);hc.scale.set(.9,1.1,1.03);hc.rotation.x=.4;head.add(hc);
+ if(c.hairS==='corn'){const R=.1255,gm=MS(0x1c120b,.45);for(let k=-3;k<=3;k++){const xk=k*.029,rho=Math.sqrt(R*R-xk*xk),pts=[];for(let i=0;i<=14;i++){const t=-1.5+i*(3.2/14);pts.push(new THREE.Vector3(xk,rho*Math.cos(t),rho*Math.sin(t)))}
+  const tb=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.0088,6,false),gm);tb.castShadow=true;hc.add(tb);if(k%2===0){const e=pts[14];hc.add(sph(.011,gold,e.x,e.y,e.z))}}}
+ let anim=null;
+ if(c.hairS==='cap'){const d=mesh(new THREE.SphereGeometry(.13,16,10,0,Math.PI*2,0,Math.PI*.52),MS(c.capC,.6),0,.03,.01);d.scale.set(.93,1.05,1.05);d.rotation.x=.12;const br=mesh(new THREE.BoxGeometry(.14,.012,.1),MS(c.capC,.6),0,.035,.17);br.rotation.x=-.12;head.add(d,br)}
+ if(c.hairS==='pony'){const tail=piv(head,0,.07,.1),segs=[];tail.add(mesh(new THREE.TorusGeometry(.03,.009,6,12),gold));let p=tail;for(let i=0;i<4;i++){const sg=piv(p,0,i?-.1:0,0);sg.add(cyl(.032-i*.004,.028-i*.004,.11,hairM,0,-.055,0,8));segs.push(sg);p=sg}p.add(sph(.014,gold,0,-.11,0));tail.rotation.x=.7;
+  anim=(t,run)=>{const a=run?1:.2;tail.rotation.x=.75+Math.sin(t*15)*.12*a;segs.forEach((sg,i)=>sg.rotation.x=.25+Math.sin(t*15-i*.9)*.2*a)}}
+ if(c.bag){up.add(mesh(new THREE.BoxGeometry(.34,.4,.16),MS(0x854d0e,.8),0,.4,.24),mesh(new THREE.BoxGeometry(.3,.12,.1),dk,0,.25,.3));for(const s of [-1,1])up.add(mesh(new THREE.BoxGeometry(.04,.36,.02),dk,s*.12,.43,.15))}
+ const arm=s=>{const a=piv(up,s*c.sh,.6,0);a.rotation.z=s*.07;a.scale.set(c.lim,1,c.lim);a.add(cyl(.052,.044,.3,skin,0,-.15,0),sph(.08,slM,0,0,0),cyl(.072,.068,c.sleeveLen,slM,0,-c.sleeveLen/2,0));
+  if(c.trim)a.add(cyl(.0705,.0705,.018,MS(0xce1126),0,-c.sleeveLen,0),cyl(.0705,.0705,.018,MS(0x006b3f),0,-c.sleeveLen-.018,0));
+  const e=piv(a,0,-.3,0);e.add(sph(.045,skin,0,0,0),cyl(.043,.034,.27,skin,0,-.135,0),sph(.046,skin,0,-.29,0,1,1.2,.8),sph(.02,skin,-s*.035,-.27,-.02));return[a,e]};
+ const long=c.bottom==='jeans',leg=s=>{const h=piv(rig,s*c.hipX,0,0);h.scale.set(c.lim,1,c.lim);
+  h.add(cyl(long?.092:.085,long?.072:.065,.46,long?botM:skin,0,-.23,0));if(c.bottom==='shorts')h.add(cyl(.098,.092,.27,botM,0,-.13,0));
+  const k=piv(h,0,-.46,0);k.add(sph(.064,long?botM:skin,0,0,0),cyl(long?.072:.062,long?.058:.044,.44,long?botM:skin,0,-.22,0));
+  if(c.sock)for(let i=0;i<6;i++)k.add(cyl(.054,.055,.02,MS([0xce1126,0xfcd116,0x006b3f][i%3],.7),0,-.28-.02*i,0));else if(!long)k.add(cyl(.052,.054,.1,white,0,-.38,0));
+  const f=piv(k,0,-.43,0);f.add(mesh(new THREE.BoxGeometry(.11,.07,.22),shoeM,0,-.01,-.04),sph(.057,shoeM,0,-.012,-.15,1,.75,1.1),mesh(new THREE.BoxGeometry(.118,.028,.3),soleM,0,-.05,-.07));return[h,k]};
+ if(c.bottom==='skirt'){const sk=cyl(.16,.3,.4,botM,0,-.16,0,24);sk.scale.z=.85;rig.add(sk)}
+ const[hL,kL]=leg(-1),[hR,kR]=leg(1),[sL,eL]=arm(-1),[sR,eR]=arm(1);
+ return{rig,up,J:[hL,kL,hR,kR,sL,eL,sR,eR],anim};
+}
+const coinFace=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(50,46,6,64,64,64);g.addColorStop(0,'#fff3b0');g.addColorStop(.6,'#f2b616');g.addColorStop(1,'#b87400');x.fillStyle=g;x.fillRect(0,0,128,128);x.strokeStyle='#8a5500';x.lineWidth=6;x.beginPath();x.arc(64,64,54,0,7);x.stroke();x.fillStyle='#7a4a00';x.font='900 78px Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('₵',64,70);return new THREE.CanvasTexture(c)})();
+const coinFaceM=new THREE.MeshStandardMaterial({map:coinFace,roughness:.3,metalness:.5}),coinMats=[M.gold,coinFaceM,coinFaceM];
+function setCharacter(id){const c=CHARS[id];if(!c)return;if(player.resetFx)player.resetFx();if(player.rig&&player.rig.parent)player.rig.parent.remove(player.rig);const b=buildHuman(c);player.group.add(b.rig);player.rig=b.rig;player.up=b.up;player.J=b.J;player.anim=b.anim;player.charId=id;try{localStorage.setItem('cw_char2',id)}catch(e){}byId('char-name').textContent=c.name}
+{let cur='keli';try{cur=localStorage.getItem('cw_char2')||'keli'}catch(e){}setCharacter(CHARS[cur]?cur:'keli')}
+// ---- 3D runner picker (drag to turn, tap to run, arrows/tabs to switch) ----
+const CHAR_ORDER=['adwoa','keli','nii'],cv={ready:false,idx:1,rot:.5,run:false,mode:null,loop:false,drag:false,moved:0,pop:1,m:[]};
+function showChar(i){cv.idx=(i+3)%3;const id=CHAR_ORDER[cv.idx],c=CHARS[id];cv.m.forEach((o,k)=>o.g.visible=k===cv.idx);cv.pop=0;cv.rot=Math.PI+.4;byId('char-title').textContent=c.name.toUpperCase();byId('char-desc').textContent=c.desc;byId('char-use').textContent=(id===player.charId?'Selected: ':'Use ')+c.name;[...byId('char-tabs').children].forEach((b,k)=>b.classList.toggle('on',k===cv.idx))}
+function initViewer(){
+ if(cv.ready)return;cv.ready=true;const box=byId('char-view');
+ const r=cv.r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(devicePixelRatio,2));
+ const sc=cv.s=new THREE.Scene();sc.add(new THREE.HemisphereLight(0xffecd2,0x4a5a3a,1.45));const dl=new THREE.DirectionalLight(0xfff1d2,1.8);dl.position.set(2,4,3);const rl=new THREE.DirectionalLight(0xffd9a0,1.1);rl.position.set(-3,2.5,-3);sc.add(dl,rl);
+ cv.c=new THREE.PerspectiveCamera(30,1,.1,50);
+ cv.plat=new THREE.Mesh(new THREE.CylinderGeometry(.85,.95,.12,32),mat(0x5b6650,.9));cv.plat.position.y=-.06;cv.ring=new THREE.Mesh(new THREE.TorusGeometry(.86,.03,8,48),mat(0xe0a419,.3,.7));cv.ring.rotation.x=Math.PI/2;sc.add(cv.plat,cv.ring);
+ cv.m=CHAR_ORDER.map(id=>{const b=buildHuman(CHARS[id]),g=new THREE.Group();g.add(b.rig);sc.add(g);return{g,b}});
+ CHAR_ORDER.forEach((id,k)=>{const b=document.createElement('button');b.className='ctab';b.textContent=CHARS[id].name.toUpperCase();b.onclick=()=>showChar(k);byId('char-tabs').appendChild(b)});
+ box.addEventListener('pointerdown',e=>{cv.drag=true;cv.moved=0;cv.lx=e.clientX;box.setPointerCapture(e.pointerId)});
+ box.addEventListener('pointermove',e=>{if(!cv.drag)return;const dx=e.clientX-cv.lx;cv.lx=e.clientX;cv.moved+=Math.abs(dx);cv.rot+=dx*.012});
+ box.addEventListener('pointerup',()=>{if(cv.drag&&cv.moved<6)cv.run=!cv.run;cv.drag=false});box.addEventListener('pointercancel',()=>{cv.drag=false});
+ byId('char-prev').onclick=()=>showChar(cv.idx-1);byId('char-next').onclick=()=>showChar(cv.idx+1);
+ byId('char-use').onclick=()=>{setCharacter(CHAR_ORDER[cv.idx]);closeChar()};byId('char-back').onclick=closeChar;
+}
+function attach(mode){
+ initViewer();cv.mode=mode;const box=byId(mode==='home'?'home-view':'char-view');if(cv.r.domElement.parentNode!==box)box.appendChild(cv.r.domElement);
+ const w=box.clientWidth||200,h=box.clientHeight||300,asp=w/h;cv.r.setSize(w,h);cv.c.aspect=asp;
+ const d=Math.max(4.5,(mode==='home'?.75:1)/(.268*asp));cv.c.position.set(0,1.15,d);cv.c.lookAt(0,.98,0);cv.c.updateProjectionMatrix();
+ const k=mode==='home'?.62:1;cv.plat.scale.set(k,1,k);cv.ring.scale.set(k,k,1);
+ if(mode==='home'){cv.idx=Math.max(0,CHAR_ORDER.indexOf(player.charId));cv.m.forEach((o,i)=>o.g.visible=i===cv.idx);cv.pop=0;cv.run=false}
+ if(!cv.loop){cv.loop=true;requestAnimationFrame(charLoop)}
+}
+function homeShow(){if(state===State.MENU)attach('home')}
+function closeChar(){byId('char-screen').classList.add('hidden');homeShow()}
+function openChar(){byId('char-screen').classList.remove('hidden');attach('pick');showChar(CHAR_ORDER.indexOf(player.charId))}
+function charLoop(ts){
+ if(!cv.mode){cv.loop=false;return}requestAnimationFrame(charLoop);const t=ts/1000,home=cv.mode==='home';
+ if(home)cv.rot=Math.PI+.55;else if(!cv.drag)cv.rot+=.008;cv.pop=Math.min(1,cv.pop+.06);
+ const o=cv.m[cv.idx],b=o.b,J=b.J,run=home||cv.run;o.g.rotation.y=cv.rot;o.g.scale.setScalar(.85+.15*cv.pop);
+ if(run){const s=Math.sin(t*10),cc=Math.cos(t*10),T=[s*.95,-(.25+Math.max(0,cc)*1.25),-s*.95,-(.25+Math.max(0,-cc)*1.25),-s*.8,.9+.3*cc,s*.8,.9-.3*cc];J.forEach((j,i)=>j.rotation.x=T[i]);b.up.rotation.x=-.16;b.up.rotation.y=-s*.2;b.rig.rotation.y=s*.14;b.rig.position.y=.92+Math.abs(cc)*.05}
+ else{[0,-.05,0,-.05,.05,.2,.05,.2].forEach((v,i)=>J[i].rotation.x=v);b.up.rotation.x=Math.sin(t*1.6)*.015;b.up.rotation.y=0;b.rig.rotation.y=0;b.rig.position.y=.95}
+ if(b.anim)b.anim(t,run);cv.r.render(cv.s,cv.c)}
+byId('char-btn').addEventListener('click',openChar);
+byId('how-btn').addEventListener('click',()=>info('How to Play','↔️ Swipe ← / → to change lanes\n⬆️ Swipe up to jump potholes, dogs & trays\n⬇️ Swipe down to slide under awnings\n🚐 Dodge trotros: pick a clear lane\n🧲 Grab power-ups: jetpack, flag and magnet\n₵ Every coin is worth 1 cedi'));
+addEventListener('resize',()=>{if(cv.mode)attach(cv.mode)});
+homeShow();
 // ================= POWER-UPS: jetpack, flag bounce, magnet (each has a timer) =================
 const PW={jet:{dur:8},flag:{dur:10},magnet:{dur:12}},pw={jet:0,flag:0,magnet:0},powerups=[],_tv=new THREE.Vector3(),hudPw={};let nextAir=0,airLane=0;
 const flagTex=(()=>{const c=document.createElement('canvas');c.width=192;c.height=128;const x=c.getContext('2d');x.fillStyle='#ce1126';x.fillRect(0,0,192,43);x.fillStyle='#fcd116';x.fillRect(0,43,192,42);x.fillStyle='#006b3f';x.fillRect(0,85,192,43);x.fillStyle='#000';x.beginPath();for(let i=0;i<10;i++){const r=i%2?8.5:22,a=-Math.PI/2+i*Math.PI/5;x.lineTo(96+Math.cos(a)*r,64+Math.sin(a)*r)}x.closePath();x.fill();return new THREE.CanvasTexture(c)})();
@@ -417,7 +519,7 @@ sound.power=function(){this.tone(330,1320,.28,'triangle');setTimeout(()=>this.ch
   for(let i=0;i<10;i++){const v=T?T[i]:null;if(v==null){ov[i]=null;continue}if(ov[i]==null)ov[i]=O[i].rotation.x;ov[i]+=(v-ov[i])*k;O[i].rotation.x=ov[i]}
   att(this.jp,this.up,jet||this.fall);att(this.fg,this.J[7],bn);
   if(jet)this.jpFl.forEach(f=>f.scale.y=.8+Math.random()*.9);
-  if(bn)waveFlag(this.fgFlag,t,.07);
+  if(this.anim)this.anim(t,!jet&&!this.fall&&!this.jumping&&!this.sliding);if(bn)waveFlag(this.fgFlag,t,.07);
   const col=jet||this.fall?0xffd24a:bn?0x2fe36b:pw.magnet>0?0x4aa8ff:0,a=this.aura;a.visible=!!col;
   if(col){a.material.color.setHex(col);a.position.set(g.position.x,.06,g.position.z);const sc=1+Math.sin(t*6)*.08;a.scale.set(sc*.75,sc*.75,1)}
  };
@@ -425,7 +527,7 @@ sound.power=function(){this.tone(330,1320,.28,'triangle');setTimeout(()=>this.ch
 function clearEntities(){obstacles.forEach(o=>o.destroy());obstacles.length=0;collectibles.forEach(c=>c.destroy());collectibles.length=0;powerups.forEach(p=>scene.remove(p.group));powerups.length=0}
 function haptics(){if(navigator.vibrate)navigator.vibrate([100,50,170])}
 function startGame(){
- resetGame();state=State.PLAYING;sound.menuPause();sound.musicPlay(true);document.getElementById('start-screen').classList.add('hidden');document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.remove('hidden');document.getElementById('bottom-controls').classList.remove('hidden');
+ resetGame();state=State.PLAYING;sound.menuPause();sound.musicPlay(true);cv.mode=null;document.getElementById('start-screen').classList.add('hidden');document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.remove('hidden');document.getElementById('bottom-controls').classList.remove('hidden');
 }
 function resetGame(){
  score=0;coins=0;distance=0;gameSpeed=.72;nextSpawnDistance=0;spawnCount=0;clearEntities();
@@ -433,13 +535,13 @@ function resetGame(){
  new Collectible(-11,-1);new Collectible(-17,1);
  document.getElementById('score-val').textContent='0';document.getElementById('coins-val').textContent='0';document.getElementById('distance-val').textContent='0';
 }
-function gameOver(){if(state===State.GAMEOVER)return;state=State.GAMEOVER;sound.musicPause();sound.crash();haptics();document.getElementById('go-score').textContent=Math.floor(score);document.getElementById('go-coins').textContent=coins;document.getElementById('go-distance').textContent=Math.floor(distance)+'m';document.getElementById('gameover-screen').classList.remove('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('bottom-controls').classList.add('hidden')}
+function gameOver(){if(state===State.GAMEOVER)return;state=State.GAMEOVER;sound.musicPause();sound.crash();haptics();document.getElementById('go-score').textContent=Math.floor(score);document.getElementById('go-coins').textContent='₵'+coins;document.getElementById('go-distance').textContent=Math.floor(distance)+'m';document.getElementById('gameover-screen').classList.remove('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('bottom-controls').classList.add('hidden')}
 document.getElementById('start-btn').addEventListener('click',()=>{sound.init();startGame()});
 document.getElementById('restart-btn').addEventListener('click',()=>{sound.init();startGame()});
-document.getElementById('menu-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();state=State.MENU;document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');resetGame()});
+document.getElementById('menu-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();setTimeout(homeShow,0);state=State.MENU;document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');resetGame()});
 document.getElementById('pause-btn').addEventListener('click',()=>{if(state===State.PLAYING){sound.musicPause();state=State.PAUSED;document.getElementById('pause-screen').classList.remove('hidden')}});
 document.getElementById('resume-btn').addEventListener('click',()=>{sound.musicPlay();state=State.PLAYING;document.getElementById('pause-screen').classList.add('hidden')});
-document.getElementById('quit-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();state=State.MENU;document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('bottom-controls').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');resetGame()});
+document.getElementById('quit-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();setTimeout(homeShow,0);state=State.MENU;document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('bottom-controls').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');resetGame()});
 addEventListener('keydown',e=>{if(state!==State.PLAYING)return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')player.left();if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')player.right();if(e.key==='ArrowUp'||e.key===' '||e.key.toLowerCase()==='w')player.jump();if(e.key==='ArrowDown'||e.key.toLowerCase()==='s')player.slide()});
 let tx=0,ty=0;addEventListener('touchstart',e=>{if(e.touches.length){tx=e.touches[0].clientX;ty=e.touches[0].clientY}},{passive:true});
 addEventListener('touchend',e=>{if(state!==State.PLAYING||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;if(Math.abs(dx)>Math.abs(dy)){dx>0?player.right():player.left()}else{dy<0?player.jump():player.slide()}},{passive:true});
