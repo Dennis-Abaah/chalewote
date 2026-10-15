@@ -415,8 +415,17 @@ function buildHuman(c){
   const k=piv(h,0,-.46,0);k.add(sph(.064,long?botM:skin,0,0,0),cyl(long?.072:.062,long?.058:.044,.44,long?botM:skin,0,-.22,0));
   if(c.sock)for(let i=0;i<6;i++)k.add(cyl(.054,.055,.02,MS([0xce1126,0xfcd116,0x006b3f][i%3],.7),0,-.28-.02*i,0));else if(!long)k.add(cyl(.052,.054,.1,white,0,-.38,0));
   const f=piv(k,0,-.43,0);f.add(mesh(new THREE.BoxGeometry(.11,.07,.22),shoeM,0,-.01,-.04),sph(.057,shoeM,0,-.012,-.15,1,.75,1.1),mesh(new THREE.BoxGeometry(.118,.028,.3),soleM,0,-.05,-.07));return[h,k]};
- if(c.bottom==='skirt'){const sk=cyl(.16,.3,.4,botM,0,-.16,0,24);sk.scale.z=.85;rig.add(sk)}
- const[hL,kL]=leg(-1),[hR,kR]=leg(1),[sL,eL]=arm(-1),[sR,eR]=arm(1);
+  const[hL,kL]=leg(-1),[hR,kR]=leg(1),[sL,eL]=arm(-1),[sR,eR]=arm(1);
+ if(c.bottom==='skirt'){
+  // flowing skirt: 12 hinged panels that lift out of the way of each swinging leg
+  const N=12,rT=.155,rB=.28,len=.4,panels=[],skM=new THREE.MeshStandardMaterial({map:c.botTex(),roughness:.8,side:THREE.DoubleSide});
+  for(let i=0;i<N;i++){const phi=i/N*Math.PI*2,wT=2*Math.PI*rT/N*1.15,wB=2*Math.PI*rB/N*1.15,u0=i/N,u1=(i+1)/N,g=new THREE.BufferGeometry();
+   g.setAttribute('position',new THREE.Float32BufferAttribute([-wT/2,0,0,wT/2,0,0,-wB/2,-len,rB-rT,wB/2,-len,rB-rT],3));
+   g.setAttribute('uv',new THREE.Float32BufferAttribute([u0,.85,u1,.85,u0,.22,u1,.22],2));g.setIndex([0,2,1,1,2,3]);g.computeVertexNormals();
+   const pg=new THREE.Group();pg.rotation.y=phi;pg.position.y=.04;rig.add(pg);const h=new THREE.Group();h.position.z=rT;pg.add(h);const m=new THREE.Mesh(g,skM);m.castShadow=true;h.add(m);panels.push({h,cz:Math.cos(phi),ph:phi})}
+  anim=(t,run)=>{const aL=Math.sin(hL.rotation.x),aR=Math.sin(hR.rotation.x);
+   for(const p of panels){const lift=Math.max(0,-aL*p.cz,-aR*p.cz)*1.3+(run?Math.sin(t*15+p.ph*2)*.04:0);p.h.rotation.x=-lift;p.h.scale.x=1+.8*Math.max(0,lift)}}
+ }
  return{rig,up,J:[hL,kL,hR,kR,sL,eL,sR,eR],anim};
 }
 const coinFace=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(50,46,6,64,64,64);g.addColorStop(0,'#fff3b0');g.addColorStop(.6,'#f2b616');g.addColorStop(1,'#b87400');x.fillStyle=g;x.fillRect(0,0,128,128);x.strokeStyle='#8a5500';x.lineWidth=6;x.beginPath();x.arc(64,64,54,0,7);x.stroke();x.fillStyle='#7a4a00';x.font='900 78px Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('₵',64,70);return new THREE.CanvasTexture(c)})();
