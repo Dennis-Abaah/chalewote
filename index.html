@@ -350,9 +350,9 @@ function estateRoadMat(){const c=document.createElement('canvas');c.width=512;c.
 function getRoadMat(k){return roadMats[k]||(roadMats[k]=k==='dusty'?dustyRoadMat():estateRoadMat())}
 
 // ---------- environment settings ----------
-const ROADS={normal:{name:'Normal Road',desc:'Cracked Jamestown tarmac',ground:0x7a5a3e,shoulder:0x8f5f3c,sky:0x87ceeb,fog:0xc29d78,fd:.008},
- dusty:{name:'Dusty Road',desc:'Dry red laterite track',ground:0xa0693a,shoulder:0xb98048,sky:0xe2c9a0,fog:0xd8ab74,fd:.011,br:.68,hi:.72,si:.62},
- estate:{name:'Estate Road',desc:'Smooth coal-tar road',ground:0x4f8a3a,shoulder:0x5fa044,sky:0x8fd0f5,fog:0xc3dbea,fd:.006}};
+const ROADS={normal:{name:'Amasaman',desc:'Cracked tarmac',ground:0x7a5a3e,shoulder:0x8f5f3c,sky:0x87ceeb,fog:0xc29d78,fd:.008},
+ dusty:{name:'Kasoa',desc:'Dry red laterite track',ground:0xa0693a,shoulder:0xb98048,sky:0xe2c9a0,fog:0xd8ab74,fd:.011,br:.68,hi:.72,si:.62},
+ estate:{name:'East Legon',desc:'Smooth coal-tar road',ground:0x4f8a3a,shoulder:0x5fa044,sky:0x8fd0f5,fog:0xc3dbea,fd:.006}};
 const WEATHERS={clear:{name:'Normal',desc:'Clear skies',fd:1,hi:1,si:1},windy:{name:'Windy',desc:'Dust & flying rubbish',sky:0xdcc7a0,fog:0xd2b184,fd:2,hi:.95,si:.8},rainy:{name:'Rainy',desc:'Heavy rain & puddles',sky:0x6b7886,fog:0x838f9c,fd:1.9,hi:.7,si:.35}};
 let envRoad='normal',envWeather='clear',flashT=0,nextFlash=6,hemiBase=1.55;
 try{const d=JSON.parse(localStorage.getItem('cw_env')||'null');if(d&&ROADS[d.r])envRoad=d.r;if(d&&WEATHERS[d.w])envWeather=d.w}catch(e){}
