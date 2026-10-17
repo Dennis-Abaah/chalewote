@@ -870,6 +870,47 @@ const GOBE_URL='https://dub.sh/chalewote';
 document.querySelectorAll('.gobe-btn').forEach(b=>b.addEventListener('click',()=>{if(GOBE_URL.includes('your-link-here')){info('Buy me Gobɛ','The gift link has not been added yet.');return}window.open(GOBE_URL,'_blank','noopener')}));
 const evs=['pointerdown','touchstart','keydown'],unlockMenu=e=>{if(state!==State.MENU||(e.target&&e.target.closest&&e.target.closest('#start-btn')))return;sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)))};
 evs.forEach(t=>addEventListener(t,unlockMenu));sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)));
+// ---- iOS/Safari sound-effect fix: play sound effects through Web Audio (decoded buffers) ----
+// iOS only lets an <audio> element play if it was started directly by a tap, and cloned/auto-triggered
+// effects (dodge, die, coin, power, thunder) get blocked. Web Audio, once unlocked, plays anytime.
+(()=>{
+ try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+ const bufs={},loading={};let silentDone=false;
+ const _init=sound.init.bind(sound),_playFull=sound.playFull.bind(sound),_coin=sound.coin.bind(sound),_crash=sound.crash.bind(sound);
+ function ensureCtx(){
+  try{
+   if(!sound.ctx)sound.ctx=new(window.AudioContext||window.webkitAudioContext)();
+   if(sound.ctx.state!=='running'&&sound.ctx.resume)sound.ctx.resume();
+   if(!silentDone){silentDone=true;const b=sound.ctx.createBuffer(1,1,22050),s=sound.ctx.createBufferSource();s.buffer=b;s.connect(sound.ctx.destination);s.start(0)}
+   return sound.ctx;
+  }catch(e){return null}
+ }
+ function decode(data){return new Promise((res,rej)=>{const p=sound.ctx.decodeAudioData(data,res,rej);if(p&&p.catch)p.catch(rej)})}
+ function loadAll(){
+  if(!sound.ctx||!window.fetch)return;
+  Object.keys(sound.audio).forEach(n=>{
+   if(bufs[n]||loading[n])return;loading[n]=true;
+   fetch('./'+n+'.mp3').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(decode).then(b=>{bufs[n]=b}).catch(()=>{loading[n]=false});
+  });
+ }
+ function playBuf(n,gain){
+  const b=bufs[n];if(!b||!sound.ctx||sound.muted)return false;
+  try{
+   if(sound.ctx.state!=='running'&&sound.ctx.resume)sound.ctx.resume();
+   const s=sound.ctx.createBufferSource(),g=sound.ctx.createGain();
+   s.buffer=b;g.gain.value=gain;s.connect(g);g.connect(sound.dest());s.start(0);return true;
+  }catch(e){return false}
+ }
+ sound.init=function(){_init();ensureCtx();loadAll()};
+ sound.playFull=function(n,fb){if(!playBuf(n,.8))_playFull(n,fb)};
+ sound.coin=function(){if(this.muted)return;if(!playBuf('coin',.88))_coin()};
+ sound.crash=function(){if(this.muted)return;if(!playBuf('die',.8))_crash()};
+ // unlock on the very first touch/click/key so effects are ready before gameplay
+ const evs2=['touchstart','touchend','pointerdown','click','keydown'];
+ const unlock=()=>{ensureCtx();loadAll();if(sound.ctx&&sound.ctx.state==='running')evs2.forEach(t=>removeEventListener(t,unlock,true))};
+ evs2.forEach(t=>addEventListener(t,unlock,true));
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sound.ctx&&sound.ctx.state!=='running'&&sound.ctx.resume)sound.ctx.resume()});
+})();
 resetGame();updateRoad();animate();
 </script>
 </body>
