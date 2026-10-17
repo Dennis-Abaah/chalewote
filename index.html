@@ -866,7 +866,7 @@ sound.thunderSynth=function(){try{const c=this.ctx,t=c.currentTime,len=Math.floo
  Player.prototype.right=function(){const o=this.lane;_r.call(this);if(this.lane!==o)sound.dodge()};
  Player.prototype.slide=function(){const w=this.sliding;_s.call(this);if(!w&&this.sliding)sound.dodge()}}
 // ---- "Buy me Gobɛ" gift button: put your Paystack payment link here ----
-const GOBE_URL='https://paystack.shop/pay/4nunqgjzh0';
+const GOBE_URL='https://dub.sh/chalewote';
 document.querySelectorAll('.gobe-btn').forEach(b=>b.addEventListener('click',()=>{if(GOBE_URL.includes('your-link-here')){info('Buy me Gobɛ','The gift link has not been added yet.');return}window.open(GOBE_URL,'_blank','noopener')}));
 const evs=['pointerdown','touchstart','keydown'],unlockMenu=e=>{if(state!==State.MENU||(e.target&&e.target.closest&&e.target.closest('#start-btn')))return;sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)))};
 evs.forEach(t=>addEventListener(t,unlockMenu));sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)));
