@@ -83,6 +83,7 @@
 .ecard b{display:block;font-family:Cinzel,serif;font-size:11px;color:#fff3b0;margin-top:4px;text-shadow:0 2px 2px #000}
 .ecard small{display:block;font-size:9px;line-height:1.15;color:#d8dcb8;margin-top:1px}
 .ecard.on{border-color:#e0a419;box-shadow:0 0 12px #ffc83a88}
+.tr-btn.gift{text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#3a1f00;text-shadow:0 1px 0 #fff3b0;border-color:#5a3a00;background:var(--grain),linear-gradient(180deg,#ffd24a,#e0971a 55%,#a86300)}
 </style>
 </head>
 <body class="relative w-screen h-[100dvh] overflow-hidden">
@@ -115,6 +116,7 @@
       <button id="start-btn" class="tr-btn primary" style="padding:14px 6px;font-size:15px;letter-spacing:.08em">Start Run</button>
       <button id="how-btn" class="tr-btn" style="font-size:12px;padding:9px;margin-top:10px">How to Play</button>
       <button id="env-btn" class="tr-btn" style="font-size:11px;padding:8px 6px;margin-top:10px;line-height:1.2">Change Environments</button>
+      <button class="tr-btn gift gobe-btn" style="font-size:13px;padding:10px 6px;margin-top:10px">🍲 BUY ME GOBƐ</button>
     </div>
     <div id="home-stage" style="position:absolute;right:6px;bottom:18px;width:200px;height:310px">
       <div id="home-view" style="position:relative;width:100%;height:100%"></div>
@@ -168,6 +170,7 @@
       </div>
       <div class="stone stat mb-5 flex justify-between items-center px-5"><small style="margin:0">Distance Run</small><span id="go-distance" class="num gold text-xl">0m</span></div>
       <button id="restart-btn" class="tr-btn primary">Run Again</button>
+      <button class="tr-btn gift gobe-btn mt-3" style="font-size:16px;padding:12px">🍲 BUY ME GOBƐ</button>
       <button id="menu-btn" class="tr-btn mt-3" style="font-size:14px;padding:11px">Back to Menu</button>
     </div>
   </div>
@@ -862,6 +865,9 @@ sound.thunderSynth=function(){try{const c=this.ctx,t=c.currentTime,len=Math.floo
  Player.prototype.left=function(){const o=this.lane;_l.call(this);if(this.lane!==o)sound.dodge()};
  Player.prototype.right=function(){const o=this.lane;_r.call(this);if(this.lane!==o)sound.dodge()};
  Player.prototype.slide=function(){const w=this.sliding;_s.call(this);if(!w&&this.sliding)sound.dodge()}}
+// ---- "Buy me Gobɛ" gift button: put your Paystack payment link here ----
+const GOBE_URL='https://paystack.shop/pay/4nunqgjzh0';
+document.querySelectorAll('.gobe-btn').forEach(b=>b.addEventListener('click',()=>{if(GOBE_URL.includes('your-link-here')){info('Buy me Gobɛ','The gift link has not been added yet.');return}window.open(GOBE_URL,'_blank','noopener')}));
 const evs=['pointerdown','touchstart','keydown'],unlockMenu=e=>{if(state!==State.MENU||(e.target&&e.target.closest&&e.target.closest('#start-btn')))return;sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)))};
 evs.forEach(t=>addEventListener(t,unlockMenu));sound.menuPlay(()=>evs.forEach(t=>removeEventListener(t,unlockMenu)));
 resetGame();updateRoad();animate();
