@@ -84,6 +84,26 @@
 .ecard small{display:block;font-size:9px;line-height:1.15;color:#d8dcb8;margin-top:1px}
 .ecard.on{border-color:#e0a419;box-shadow:0 0 12px #ffc83a88}
 .tr-btn.gift{text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#3a1f00;text-shadow:0 1px 0 #fff3b0;border-color:#5a3a00;background:var(--grain),linear-gradient(180deg,#ffd24a,#e0971a 55%,#a86300)}
+
+/* Adsterra Bottom Banner Container */
+#ad-container {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 50px;
+  z-index: 25;
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Push pause button up slightly so it doesn't overlap the 50px ad banner */
+#bottom-controls {
+  padding-bottom: 60px !important;
+}
 </style>
 </head>
 <body class="relative w-screen h-[100dvh] overflow-hidden">
@@ -189,6 +209,22 @@
     </div>
   </div>
   <div id="bottom-controls" class="hidden flex justify-end pb-8 md:pb-2"><button id="pause-btn" class="interactive pause"><i></i><i></i></button></div>
+  <div id="bottom-controls" class="hidden flex justify-end pb-8 md:pb-2"><button id="pause-btn" class="interactive pause"><i></i><i></i></button></div>
+  
+  <!-- ADD THIS AD CONTAINER HERE -->
+  <div id="ad-container">
+    <script>
+    atOptions = {
+      'key' : 'ece4739ad8d88a778c91e8e25f84de2d',
+      'format' : 'iframe',
+      'height' : 50,
+      'width' : 320,
+      'params' : {}
+    };
+  </script>
+  <script src="https://www.highrevenueformat.com/ece4739ad8d88a778c91e8e25f84de2d/invoke.js"></script>
+  </div>
+</div>
 </div>
 <script>
 'use strict';
@@ -755,7 +791,8 @@ sound.power=function(){this.tone(330,1320,.28,'triangle');setTimeout(()=>this.ch
 function clearEntities(){obstacles.forEach(o=>o.destroy());obstacles.length=0;collectibles.forEach(c=>c.destroy());collectibles.length=0;powerups.forEach(p=>scene.remove(p.group));powerups.length=0}
 function haptics(){if(navigator.vibrate)navigator.vibrate([100,50,170])}
 function startGame(){
- resetGame();state=State.PLAYING;sound.menuPause();sound.musicPlay(true);cv.mode=null;document.getElementById('start-screen').classList.add('hidden');document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.remove('hidden');document.getElementById('bottom-controls').classList.remove('hidden');
+ resetGame();
+ state=State.PLAYING;sound.menuPause();sound.musicPlay(true);cv.mode=null;document.getElementById('start-screen').classList.add('hidden');document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.remove('hidden');document.getElementById('bottom-controls').classList.remove('hidden');
 }
 function resetGame(){
  score=0;coins=0;distance=0;gameSpeed=.72;nextSpawnDistance=0;spawnCount=0;clearEntities();
@@ -913,6 +950,7 @@ evs.forEach(t=>addEventListener(t,unlockMenu));sound.menuPlay(()=>evs.forEach(t=
    s.buffer=b;g.gain.value=gain;s.connect(g);g.connect(sound.dest());s.start(0);return true;
   }catch(e){return false}
  }
+ 
  sound.init=function(){_init();ensureCtx();loadAll()};
  sound.playFull=function(n,fb){if(!playBuf(n,.8))_playFull(n,fb)};
  sound.coin=function(){if(this.muted)return;if(!playBuf('coin',.88))_coin()};
