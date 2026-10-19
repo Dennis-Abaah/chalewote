@@ -32,6 +32,7 @@
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}body{font-family:Outfit,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;background:#10160c;color:#f3f4f6;overflow:hidden;margin:0}
@@ -104,6 +105,20 @@
 #bottom-controls {
   padding-bottom: 60px !important;
 }
+.mp-input{display:block;width:100%;padding:12px 14px;font-family:Outfit,sans-serif;font-size:16px;color:#fff3b0;background:rgba(10,18,8,.6);border:2px solid #6d7a58;border-radius:10px;outline:none;text-shadow:0 2px 2px #000;margin-top:6px}
+.mp-input:focus{border-color:#e0a419;box-shadow:0 0 12px #ffc83a44}
+.mp-input::placeholder{color:#8a8a6a}
+.mp-err{color:#ff6b5a;font-size:12px;min-height:18px;margin-top:6px;text-shadow:0 2px 2px #000}
+.mp-player-slot{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(10,18,8,.4);border:1px solid #00000066;margin-bottom:6px}
+.mp-dot{width:14px;height:14px;border-radius:50%;flex:none;box-shadow:0 0 6px currentColor}
+.mp-dot-red{background:#dc2626;color:#dc2626}
+.mp-dot-yellow{background:#eab308;color:#eab308}
+.mp-dot-green{background:#16a34a;color:#16a34a}
+.mp-dot-gray{background:#555!important;color:#555!important;opacity:.5}
+.mp-hud-dots{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);display:flex;gap:10px;z-index:11;pointer-events:none}
+.mp-hud-dot{width:18px;height:18px;border-radius:50%;border:2px solid #232a1c;box-shadow:0 0 8px currentColor,inset 0 1px 3px rgba(255,255,255,.4);transition:all .3s}
+@keyframes mp-pulse{0%{transform:scale(.3);opacity:0}50%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes mp-glow{0%,100%{filter:drop-shadow(0 0 8px #ffd24a)}50%{filter:drop-shadow(0 0 20px #ffd24a)}}
 </style>
 </head>
 <body class="relative w-screen h-[100dvh] overflow-hidden">
@@ -176,7 +191,8 @@
   <div id="others-screen" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-40">
     <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
       <h2 class="num gold text-3xl">EXTRAS</h2><div class="rule"></div>
-       <button id="data-btn" class="tr-btn primary">📡 Buy cheap data bundles for yourself</button>
+      <button id="mp-btn" class="tr-btn primary" style="font-size:15px;margin-bottom:12px">⚔️ MULTIPLAYER</button>
+       <button id="data-btn" class="tr-btn primary" style="margin-top:0">📡 Buy cheap data bundles for yourself</button>
       <button id="gobe-btn" class="tr-btn gift mt-3" style="font-size:15px;padding:13px 10px">🍲 BUY ME GOBƐ</button>
       <button id="others-close" class="tr-btn mt-3" style="font-size:13px;padding:10px">Close</button>
     </div>
@@ -208,7 +224,64 @@
       <button id="quit-btn" class="tr-btn danger mt-3" style="font-size:14px;padding:11px">Quit to Menu</button>
     </div>
   </div>
-  <div id="bottom-controls" class="hidden flex justify-end pb-8 md:pb-2"><button id="pause-btn" class="interactive pause"><i></i><i></i></button></div>
+  <div id="mp-hub" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-40">
+    <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
+      <h2 class="num gold text-3xl">BATTLE ROYALE</h2><div class="rule"></div>
+      <p class="text-xs mb-4" style="color:#e8e3a8;text-shadow:0 2px 2px #000">Last runner standing wins!</p>
+      <button id="mp-create-btn" class="tr-btn primary">Create Game</button>
+      <button id="mp-join-btn" class="tr-btn mt-3">Join Game</button>
+      <button id="mp-hub-close" class="tr-btn mt-3" style="font-size:13px;padding:10px">Back</button>
+    </div>
+  </div>
+  <div id="mp-create" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-50">
+    <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
+      <h2 class="num gold text-2xl">CREATE GAME</h2><div class="rule"></div>
+      <p class="text-xs mb-3" style="color:#e8e3a8;text-shadow:0 2px 2px #000;text-align:left">Max Players</p>
+      <div class="flex gap-3 mb-4"><button class="mp-max-btn tr-btn flex-1" data-max="2" style="font-size:15px;padding:10px">2 Players</button><button class="mp-max-btn tr-btn primary flex-1" data-max="3" style="font-size:15px;padding:10px">3 Players</button></div>
+      <p class="text-xs mb-2" style="color:#e8e3a8;text-shadow:0 2px 2px #000;text-align:left">Your Name</p>
+      <input id="mp-create-name" type="text" maxlength="12" placeholder="Enter name..." class="mp-input">
+      <p id="mp-create-err" class="mp-err"></p>
+      <button id="mp-create-go" class="tr-btn primary mt-3">Create Room</button>
+      <button id="mp-create-back" class="tr-btn mt-3" style="font-size:13px;padding:10px">Back</button>
+    </div>
+  </div>
+  <div id="mp-join" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-50">
+    <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
+      <h2 class="num gold text-2xl">JOIN GAME</h2><div class="rule"></div>
+      <p class="text-xs mb-2" style="color:#e8e3a8;text-shadow:0 2px 2px #000;text-align:left">Room Code</p>
+      <input id="mp-join-code" type="text" maxlength="4" placeholder="ABCD" class="mp-input" style="text-transform:uppercase;letter-spacing:.3em;font-size:24px;text-align:center">
+      <p class="text-xs mb-2 mt-3" style="color:#e8e3a8;text-shadow:0 2px 2px #000;text-align:left">Your Name</p>
+      <input id="mp-join-name" type="text" maxlength="12" placeholder="Enter name..." class="mp-input">
+      <p id="mp-join-err" class="mp-err"></p>
+      <button id="mp-join-go" class="tr-btn primary mt-3">Join Room</button>
+      <button id="mp-join-back" class="tr-btn mt-3" style="font-size:13px;padding:10px">Back</button>
+    </div>
+  </div>
+  <div id="mp-waiting" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-50">
+    <div class="max-w-sm w-full stone tablet text-center" style="padding:20px">
+      <h2 class="num gold text-2xl">WAITING ROOM</h2><div class="rule"></div>
+      <div id="mp-room-code-display" class="stone slab justify-center mb-3" style="font-size:28px;letter-spacing:.3em"><span class="num gold">----</span></div>
+      <p id="mp-share-url" class="text-xs mb-4" style="color:#e8e3a8;text-shadow:0 2px 2px #000;cursor:pointer;word-break:break-all"></p>
+      <div id="mp-player-list" class="mb-4"></div>
+      <p id="mp-waiting-status" class="text-sm mb-3" style="color:#e8e3a8;text-shadow:0 2px 2px #000">Waiting for players...</p>
+      <button id="mp-start-btn" class="tr-btn primary hidden">Start Game</button>
+      <button id="mp-waiting-leave" class="tr-btn danger mt-3" style="font-size:13px;padding:10px">Leave Room</button>
+    </div>
+  </div>
+  <div id="mp-countdown" class="hidden absolute inset-0 flex items-center justify-center z-50" style="background:rgba(0,0,0,.6);backdrop-filter:blur(4px);pointer-events:none"><div id="mp-countdown-num" class="num gold" style="font-size:min(120px,25vw)"></div></div>
+  <div id="mp-results" class="interactive veil hidden absolute inset-0 flex items-center justify-center p-5 z-50">
+    <div class="max-w-md w-full stone tablet text-center">
+      <div id="mp-result-badge" class="chip stone inline-block mb-3" style="border-radius:999px"></div>
+      <h2 id="mp-result-title" class="num gold text-4xl md:text-5xl"></h2><div class="rule"></div>
+      <div id="mp-result-rank" class="num gold text-6xl mb-3" style="filter:drop-shadow(0 4px 8px #000)"></div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="stone stat"><small>Final Score</small><span id="mp-go-score" class="num gold text-2xl">0</span></div>
+        <div class="stone stat"><small>Distance</small><span id="mp-go-distance" class="num gold text-2xl">0m</span></div>
+      </div>
+      <div id="mp-result-players" class="mb-4"></div>
+      <button id="mp-result-menu" class="tr-btn primary">Back to Menu</button>
+    </div>
+  </div>
   <div id="bottom-controls" class="hidden flex justify-end pb-8 md:pb-2"><button id="pause-btn" class="interactive pause"><i></i><i></i></button></div>
   
   <!-- ADD THIS AD CONTAINER HERE -->
@@ -792,7 +865,7 @@ function clearEntities(){obstacles.forEach(o=>o.destroy());obstacles.length=0;co
 function haptics(){if(navigator.vibrate)navigator.vibrate([100,50,170])}
 function startGame(){
  resetGame();
- state=State.PLAYING;sound.menuPause();sound.musicPlay(true);cv.mode=null;document.getElementById('start-screen').classList.add('hidden');document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.remove('hidden');document.getElementById('bottom-controls').classList.remove('hidden');
+ state=State.PLAYING;sound.menuPause();sound.musicPlay(true);cv.mode=null;document.getElementById('start-screen').classList.add('hidden');document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.remove('hidden');document.getElementById('bottom-controls').classList.remove('hidden');const _pb=document.getElementById('pause-btn');if(_pb)_pb.style.display='';
 }
 function resetGame(){
  score=0;coins=0;distance=0;gameSpeed=.72;nextSpawnDistance=0;spawnCount=0;clearEntities();
@@ -803,10 +876,10 @@ function resetGame(){
 function gameOver(){if(state===State.GAMEOVER)return;state=State.GAMEOVER;sound.musicPause();sound.crash();haptics();document.getElementById('go-score').textContent=Math.floor(score);document.getElementById('go-coins').textContent='₵'+coins;document.getElementById('go-distance').textContent=Math.floor(distance)+'m';document.getElementById('gameover-screen').classList.remove('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('bottom-controls').classList.add('hidden')}
 document.getElementById('start-btn').addEventListener('click',()=>{sound.init();startGame()});
 document.getElementById('restart-btn').addEventListener('click',()=>{sound.init();startGame()});
-document.getElementById('menu-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();setTimeout(homeShow,0);state=State.MENU;document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');resetGame()});
-document.getElementById('pause-btn').addEventListener('click',()=>{if(state===State.PLAYING){sound.musicPause();state=State.PAUSED;document.getElementById('pause-screen').classList.remove('hidden')}});
+document.getElementById('menu-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();setTimeout(homeShow,0);state=State.MENU;document.getElementById('gameover-screen').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');if(typeof window.mpCleanup==='function')window.mpCleanup();resetGame()});
+document.getElementById('pause-btn').addEventListener('click',()=>{if(typeof mp!=='undefined'&&mp&&mp.on)return;if(state===State.PLAYING){sound.musicPause();state=State.PAUSED;document.getElementById('pause-screen').classList.remove('hidden')}});
 document.getElementById('resume-btn').addEventListener('click',()=>{sound.musicPlay();state=State.PLAYING;document.getElementById('pause-screen').classList.add('hidden')});
-document.getElementById('quit-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();setTimeout(homeShow,0);state=State.MENU;document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('bottom-controls').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');resetGame()});
+document.getElementById('quit-btn').addEventListener('click',()=>{sound.musicPause();sound.menuPlay();setTimeout(homeShow,0);state=State.MENU;document.getElementById('pause-screen').classList.add('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('bottom-controls').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');if(typeof window.mpCleanup==='function')window.mpCleanup();resetGame()});
 addEventListener('keydown',e=>{if(state!==State.PLAYING)return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')player.left();if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')player.right();if(e.key==='ArrowUp'||e.key===' '||e.key.toLowerCase()==='w')player.jump();if(e.key==='ArrowDown'||e.key.toLowerCase()==='s')player.slide()});
 let tx=0,ty=0;addEventListener('touchstart',e=>{if(e.touches.length){tx=e.touches[0].clientX;ty=e.touches[0].clientY}},{passive:true});
 addEventListener('touchend',e=>{if(state!==State.PLAYING||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;if(Math.abs(dx)>Math.abs(dy)){dx>0?player.right():player.left()}else{dy<0?player.jump():player.slide()}},{passive:true});
@@ -960,6 +1033,329 @@ evs.forEach(t=>addEventListener(t,unlockMenu));sound.menuPlay(()=>evs.forEach(t=
  const unlock=()=>{ensureCtx();loadAll();if(sound.ctx&&sound.ctx.state==='running')evs2.forEach(t=>removeEventListener(t,unlock,true))};
  evs2.forEach(t=>addEventListener(t,unlock,true));
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sound.ctx&&sound.ctx.state!=='running'&&sound.ctx.resume)sound.ctx.resume()});
+})();
+// ================= MULTIPLAYER: Battle Royale =================
+(()=>{
+if(!window.supabase){const b=document.getElementById('mp-btn');if(b)b.style.display='none';return}
+const supa=window.supabase.createClient('https://tbkrvtdbuvphuqtwmyao.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRia3J2dGRidXZwaHVxdHdteWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTQ5NDQsImV4cCI6MjEwNzk5MDk0NH0.TO6SU6FaIZcz6M-4i0vTOu-TzxLlJLVFFhgNNLsaAR4');
+const SC=['#dc2626','#eab308','#16a34a'],SL=['Host \u00b7 Red','Yellow','Green'],SDC=['mp-dot-red','mp-dot-yellow','mp-dot-green'];
+const mp={on:false,room:null,pls:[],myId:null,me:'',slot:-1,host:false,maxP:3,ch:null,dbCh:null,alive:new Set(),dead:false};
+const mel=id=>document.getElementById(id);
+function mpHide(){for(let i=0;i<arguments.length;i++){const e=mel(arguments[i]);if(e)e.classList.add('hidden')}}
+function mpShow(){for(let i=0;i<arguments.length;i++){const e=mel(arguments[i]);if(e)e.classList.remove('hidden')}}
+function mpErr(id,msg){const e=mel(id);if(e)e.textContent=msg||''}
+function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return s}
+
+// ---- UI Navigation ----
+function openHub(){mel('others-screen').classList.add('hidden');mpShow('mp-hub')}
+function openCreate(){
+ mpHide('mp-hub');mpShow('mp-create');mpErr('mp-create-err');mel('mp-create-name').value='';
+ mp.maxP=3;document.querySelectorAll('.mp-max-btn').forEach(b=>b.classList.toggle('primary',b.dataset.max==='3'));
+}
+function openJoin(code){
+ mpHide('mp-hub');mpShow('mp-join');mpErr('mp-join-err');mel('mp-join-name').value='';
+ mel('mp-join-code').value=code||'';mel('mp-join-code').readOnly=!!code;
+}
+
+function renderWaiting(){
+ const list=mel('mp-player-list');list.innerHTML='';
+ const sorted=[...mp.pls].sort((a,b)=>a.slot_index-b.slot_index);
+ for(let i=0;i<mp.room.max_players;i++){
+  const p=sorted.find(x=>x.slot_index===i),div=document.createElement('div');div.className='mp-player-slot';
+  if(p)div.innerHTML='<span class="mp-dot '+SDC[i]+'"></span><span style="flex:1;color:#fff3b0;text-shadow:0 2px 2px #000;font-weight:600">'+p.player_name+'</span><span style="font-size:11px;color:#e8e3a8">'+(i===0?'HOST':SL[i])+'</span>';
+  else div.innerHTML='<span class="mp-dot mp-dot-gray"></span><span style="flex:1;color:#8a8a6a;font-style:italic">Waiting...</span>';
+  list.appendChild(div);
+ }
+ const full=mp.pls.length>=mp.room.max_players;
+ if(mp.host){
+  if(full){mel('mp-start-btn').classList.remove('hidden');mel('mp-waiting-status').textContent='All players joined! Start when ready.'}
+  else{mel('mp-start-btn').classList.add('hidden');mel('mp-waiting-status').textContent='Waiting for players... ('+mp.pls.length+'/'+mp.room.max_players+')'}
+ }else{
+  mel('mp-start-btn').classList.add('hidden');
+  mel('mp-waiting-status').textContent=full?'Waiting for host to start...':'Waiting for players... ('+mp.pls.length+'/'+mp.room.max_players+')';
+ }
+}
+
+// ---- Supabase Operations ----
+async function createRoom(name,maxP){
+ mpErr('mp-create-err');
+ if(!name||name.trim().length<1){mpErr('mp-create-err','Enter a player name');return}
+ name=name.trim().substring(0,12);
+ const code=genCode();
+ const{data:room,error:re}=await supa.from('rooms').insert({code:code,max_players:maxP,status:'waiting'}).select().single();
+ if(re){mpErr('mp-create-err','Failed to create room: '+re.message);return}
+ const{data:pl,error:pe}=await supa.from('room_players').insert({room_id:room.id,player_name:name,slot_index:0}).select().single();
+ if(pe){mpErr('mp-create-err','Failed to join: '+pe.message);return}
+ mp.room=room;mp.myId=pl.id;mp.me=name;mp.slot=0;mp.host=true;mp.pls=[pl];
+ mpHide('mp-create');showWaiting();subscribe();
+}
+
+async function joinRoom(code,name){
+ mpErr('mp-join-err');
+ if(!code||code.trim().length<2){mpErr('mp-join-err','Enter a room code');return}
+ if(!name||name.trim().length<1){mpErr('mp-join-err','Enter a player name');return}
+ code=code.trim().toUpperCase();name=name.trim().substring(0,12);
+ const{data:room,error:re}=await supa.from('rooms').select('*').eq('code',code).single();
+ if(re||!room){mpErr('mp-join-err','Room not found');return}
+ if(room.status!=='waiting'){mpErr('mp-join-err','Game already in progress');return}
+ const{data:players}=await supa.from('room_players').select('*').eq('room_id',room.id);
+ if(players&&players.length>=room.max_players){mpErr('mp-join-err','Room is full');return}
+ if(players&&players.some(p=>p.player_name.toLowerCase()===name.toLowerCase())){mpErr('mp-join-err','Name already taken in this room');return}
+ const taken=new Set((players||[]).map(p=>p.slot_index));
+ let slot=-1;for(let i=0;i<room.max_players;i++){if(!taken.has(i)){slot=i;break}}
+ if(slot<0){mpErr('mp-join-err','Room is full');return}
+ const{data:pl,error:pe}=await supa.from('room_players').insert({room_id:room.id,player_name:name,slot_index:slot}).select().single();
+ if(pe){
+  if(pe.message&&pe.message.includes('unique')){mpErr('mp-join-err','Name already taken or room full');return}
+  mpErr('mp-join-err','Failed to join: '+pe.message);return;
+ }
+ mp.room=room;mp.myId=pl.id;mp.me=name;mp.slot=slot;mp.host=false;mp.pls=players?[...players,pl]:[pl];
+ mpHide('mp-join');showWaiting();subscribe();
+}
+
+function showWaiting(){
+ mpShow('mp-waiting');
+ mel('mp-room-code-display').querySelector('.num').textContent=mp.room.code;
+ const base=window.location.origin+window.location.pathname;
+ const url=base+'?room='+mp.room.code;
+ mel('mp-share-url').textContent='\ud83d\udccb '+url;
+ mel('mp-share-url').onclick=()=>{
+  navigator.clipboard.writeText(url).then(()=>{
+   mel('mp-share-url').textContent='\u2705 Link copied!';
+   setTimeout(()=>{mel('mp-share-url').textContent='\ud83d\udccb '+url},2000);
+  }).catch(()=>{});
+ };
+ renderWaiting();
+}
+
+function subscribe(){
+ const ch=supa.channel('room_'+mp.room.id,{config:{broadcast:{self:false},presence:{key:mp.slot+''}}});
+ ch.on('presence',{event:'leave'},({leftPresences})=>{
+  if(!mp.on)return;
+  leftPresences.forEach(p=>{if(p.slot!==undefined)handlePlayerDied(parseInt(p.slot))});
+ });
+ ch.on('broadcast',{event:'player_died'},({payload})=>{
+  if(payload&&payload.slot!==undefined)handlePlayerDied(payload.slot);
+ });
+ ch.on('broadcast',{event:'game_start'},()=>{mpStartLocal()});
+ ch.subscribe(async(status)=>{if(status==='SUBSCRIBED')await ch.track({slot:mp.slot,name:mp.me})});
+ mp.ch=ch;
+
+ const dbCh=supa.channel('db_room_'+mp.room.id)
+  .on('postgres_changes',{event:'*',schema:'public',table:'room_players',filter:'room_id=eq.'+mp.room.id},async()=>{
+   const{data}=await supa.from('room_players').select('*').eq('room_id',mp.room.id);
+   if(data)mp.pls=data;
+   if(!mp.on)renderWaiting();
+  })
+  .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:'id=eq.'+mp.room.id},(payload)=>{
+   if(payload.new&&payload.new.status==='playing'&&!mp.on)mpStartLocal();
+  })
+  .subscribe();
+ mp.dbCh=dbCh;
+}
+
+function unsubscribe(){
+ if(mp.ch){try{mp.ch.unsubscribe()}catch(e){}mp.ch=null}
+ if(mp.dbCh){try{mp.dbCh.unsubscribe()}catch(e){}mp.dbCh=null}
+}
+
+async function leaveRoom(){
+ // Reset game-critical flags FIRST (synchronously) so the next game
+ // isn't affected while the async DB cleanup runs in the background.
+ const myId=mp.myId,roomId=mp.room?mp.room.id:null,wasHost=mp.host,roomStatus=mp.room?mp.room.status:null;
+ mp.on=false;mp.dead=false;mp.room=null;mp.pls=[];mp.myId=null;mp.slot=-1;mp.host=false;
+ unsubscribe();
+ const dots=document.getElementById('mp-hud-dots');if(dots)dots.remove();
+ const pb=document.getElementById('pause-btn');if(pb)pb.style.display='';
+ // DB cleanup can finish async - game state is already safe above
+ if(myId)supa.from('room_players').delete().eq('id',myId).catch(()=>{});
+ if(wasHost&&roomId&&roomStatus==='waiting')supa.from('rooms').delete().eq('id',roomId).catch(()=>{});
+}
+window.mpCleanup=function(){if(mp&&mp.on){leaveRoom()}};
+
+async function hostStart(){
+ if(!mp.host||!mp.room)return;
+ try{
+  if(mp.ch)mp.ch.send({type:'broadcast',event:'game_start',payload:{}});
+ }catch(e){}
+ supa.from('rooms').update({status:'playing'}).eq('id',mp.room.id).then(()=>{},()=>{});
+ mpStartLocal();
+}
+
+// ---- Game Integration ----
+function mpStartLocal(){
+ if(mp.on)return;mp.on=true;mp.dead=false;
+ mp.alive=new Set(mp.pls&&mp.pls.length?mp.pls.map(p=>p.slot_index):Array.from({length:mp.room?mp.room.max_players:2},(_,i)=>i));
+ resetGame();sound.menuPause();cv.mode=null;
+ mel('start-screen').classList.add('hidden');
+ mel('gameover-screen').classList.add('hidden');
+ mel('pause-screen').classList.add('hidden');
+ mel('mp-waiting').classList.add('hidden');
+ mel('mp-hub').classList.add('hidden');
+ mel('hud').classList.remove('hidden');
+ document.querySelectorAll('#bottom-controls').forEach(el=>el.classList.add('hidden'));
+ const pb=document.getElementById('pause-btn');if(pb)pb.style.display='none';
+ createHudDots();
+ state=State.PAUSED;
+ mpCountdown(()=>{sound.musicPlay(true);state=State.PLAYING});
+}
+
+function createHudDots(){
+ let dots=document.getElementById('mp-hud-dots');if(dots)dots.remove();
+ dots=document.createElement('div');dots.id='mp-hud-dots';dots.className='mp-hud-dots';
+ const maxP=mp.room?mp.room.max_players:2;
+ for(let i=0;i<maxP;i++){
+  const d=document.createElement('div');d.className='mp-hud-dot';d.id='mp-dot-'+i;
+  d.style.background=SC[i];d.style.color=SC[i];
+  if(i===mp.slot){d.style.borderColor='#fff3b0';d.style.boxShadow='0 0 12px '+SC[i]+',0 0 4px #fff3b0'}
+  const p=mp.pls.find(x=>x.slot_index===i);d.title=p?p.player_name:'';
+  dots.appendChild(d);
+ }
+ mel('hud').appendChild(dots);
+}
+
+function updateHudDots(){
+ for(let i=0;i<(mp.room?mp.room.max_players:2);i++){
+  const d=document.getElementById('mp-dot-'+i);if(!d)continue;
+  if(mp.alive&&!mp.alive.has(i)){d.style.background='#444';d.style.color='#444';d.style.opacity='.4';d.style.boxShadow='none'}
+ }
+}
+
+function mpCountdown(cb){
+ const ov=mel('mp-countdown'),num=mel('mp-countdown-num');mpShow('mp-countdown');
+ const steps=['3','2','1','CHALE!'];let i=0;
+ function tick(){
+  if(i>=steps.length){mpHide('mp-countdown');cb();return}
+  num.textContent=steps[i];num.style.animation='none';num.offsetHeight;
+  num.style.animation='mp-pulse .7s ease-out';
+  if(i<3)try{sound.tone(440+i*220,220,.15,'triangle')}catch(e){}
+  else try{sound.chime()}catch(e){}
+  i++;setTimeout(tick,850);
+ }
+ tick();
+}
+
+function handlePlayerDied(slot){
+ if(!mp.on)return;
+ if(mp.alive)mp.alive.delete(slot);
+ updateHudDots();
+ if(!mp.dead&&mp.alive&&mp.alive.size===1&&mp.alive.has(mp.slot))setTimeout(()=>mpShowResult(1),600);
+ if(!mp.dead&&mp.alive&&mp.alive.size===0)setTimeout(()=>mpShowResult(1),600);
+}
+
+function mpHandleDeath(){
+ if(state===State.GAMEOVER||mp.dead)return;
+ mp.dead=true;
+ state=State.GAMEOVER;
+ sound.musicPause();
+ sound.crash();
+ haptics();
+ mel('hud').classList.add('hidden');
+ document.querySelectorAll('#bottom-controls').forEach(el=>el.classList.add('hidden'));
+ const pb=document.getElementById('pause-btn');if(pb)pb.style.display='none';
+
+ const rank=Math.max(1,mp.alive?mp.alive.size:1);
+ if(mp.alive)mp.alive.delete(mp.slot);
+ updateHudDots();
+
+ try{
+  if(mp.ch)mp.ch.send({type:'broadcast',event:'player_died',payload:{slot:mp.slot,name:mp.me}});
+ }catch(e){console.warn('Broadcast player_died error',e)}
+
+ try{
+  if(mp.myId)supa.from('room_players').update({is_alive:false,finish_rank:rank}).eq('id',mp.myId).then(()=>{},()=>{});
+ }catch(e){console.warn('Supabase update rank error',e)}
+
+ setTimeout(()=>mpShowResult(rank),800);
+}
+
+function mpShowResult(rank){
+ state=State.GAMEOVER;
+ sound.musicPause();
+ mel('hud').classList.add('hidden');
+ document.querySelectorAll('#bottom-controls').forEach(el=>el.classList.add('hidden'));
+ const pb=document.getElementById('pause-btn');if(pb)pb.style.display='none';
+ if(rank===1)try{sound.chime()}catch(e){}
+
+ if(rank===1){
+  try{
+   if(mp.myId)supa.from('room_players').update({finish_rank:1}).eq('id',mp.myId).then(()=>{},()=>{});
+   if(mp.room)supa.from('rooms').update({status:'finished'}).eq('id',mp.room.id).then(()=>{},()=>{});
+  }catch(e){}
+ }
+ const badge=mel('mp-result-badge'),title=mel('mp-result-title'),rankEl=mel('mp-result-rank');
+ if(rank===1){
+  badge.textContent='🏆 CHAMPION!';badge.style.color='#ffd24a';
+  title.textContent='WINNER!';rankEl.textContent='1ST';
+  rankEl.style.animation='mp-glow 1.5s infinite';
+ }else{
+  const ord=rank===2?'2ND':'3RD';
+  badge.textContent=rank===2?'ELIMINATED':'FIRST OUT';badge.style.color='#ffb3a8';
+  title.textContent='RUN OVER';rankEl.textContent=ord;rankEl.style.animation='';
+ }
+ mel('mp-go-score').textContent=Math.floor(score);
+ mel('mp-go-distance').textContent=Math.floor(distance)+'m';
+ const rp=mel('mp-result-players');rp.innerHTML='';
+ const maxP=mp.room?mp.room.max_players:2;
+ for(let i=0;i<maxP;i++){
+  const p=mp.pls.find(x=>x.slot_index===i);
+  const pName=p?p.player_name:(i===mp.slot?mp.me:('Player '+(i+1)));
+  const alive=mp.alive?mp.alive.has(i):false,d=document.createElement('div');d.className='mp-player-slot';
+  const dotC=alive?SDC[i]:'mp-dot-gray';
+  const label=alive?'🏃 Running':i===mp.slot?(rank===1?'🏆 1st':'#'+rank):'💀 Out';
+  d.innerHTML='<span class="mp-dot '+dotC+'"></span><span style="flex:1;color:'+(alive?'#fff3b0':'#8a8a6a')+';text-shadow:0 2px 2px #000">'+pName+'</span><span style="font-size:11px;color:#e8e3a8">'+label+'</span>';
+  rp.appendChild(d);
+ }
+ mpShow('mp-results');
+}
+
+function mpBackToMenu(){
+ leaveRoom();mpHide('mp-results','mp-countdown');
+ const pb=document.getElementById('pause-btn');if(pb)pb.style.display='';
+ sound.musicPause();sound.menuPlay();setTimeout(homeShow,0);
+ state=State.MENU;mel('start-screen').classList.remove('hidden');resetGame();
+}
+
+// ---- Override gameOver for multiplayer ----
+const _gameOverOriginal=gameOver;
+gameOver=function(){if(mp.on){mpHandleDeath();return}_gameOverOriginal()};
+
+// ---- Handle quit during multiplayer ----
+mel('quit-btn').addEventListener('click',()=>{
+ if(mp.on&&!mp.dead){mp.dead=true;const r=mp.alive.size;mp.alive.delete(mp.slot);
+  if(mp.ch)mp.ch.send({type:'broadcast',event:'player_died',payload:{slot:mp.slot,name:mp.me}});
+  supa.from('room_players').update({is_alive:false,finish_rank:r}).eq('id',mp.myId).catch(()=>{});}
+ if(mp.on){leaveRoom();mp.on=false}
+},true);
+
+// ---- Handle page unload ----
+window.addEventListener('beforeunload',()=>{
+ if(mp.on&&!mp.dead&&mp.ch)mp.ch.send({type:'broadcast',event:'player_died',payload:{slot:mp.slot,name:mp.me}});
+});
+
+// ---- Event Listeners ----
+mel('mp-btn').addEventListener('click',openHub);
+mel('mp-hub-close').addEventListener('click',()=>mpHide('mp-hub'));
+mel('mp-create-btn').addEventListener('click',openCreate);
+mel('mp-join-btn').addEventListener('click',()=>openJoin());
+mel('mp-create-back').addEventListener('click',()=>{mpHide('mp-create');mpShow('mp-hub')});
+mel('mp-join-back').addEventListener('click',()=>{mpHide('mp-join');mpShow('mp-hub')});
+document.querySelectorAll('.mp-max-btn').forEach(b=>b.addEventListener('click',()=>{
+ mp.maxP=parseInt(b.dataset.max);
+ document.querySelectorAll('.mp-max-btn').forEach(x=>x.classList.toggle('primary',x===b));
+}));
+mel('mp-create-go').addEventListener('click',()=>createRoom(mel('mp-create-name').value,mp.maxP));
+mel('mp-join-go').addEventListener('click',()=>joinRoom(mel('mp-join-code').value,mel('mp-join-name').value));
+mel('mp-start-btn').addEventListener('click',hostStart);
+mel('mp-waiting-leave').addEventListener('click',()=>{leaveRoom();mpHide('mp-waiting')});
+mel('mp-result-menu').addEventListener('click',mpBackToMenu);
+mel('mp-create-name').addEventListener('keydown',e=>{if(e.key==='Enter')mel('mp-create-go').click()});
+mel('mp-join-code').addEventListener('keydown',e=>{if(e.key==='Enter')mel('mp-join-name').focus()});
+mel('mp-join-name').addEventListener('keydown',e=>{if(e.key==='Enter')mel('mp-join-go').click()});
+
+// ---- URL Parameter: auto-join via ?room=CODE ----
+const urlP=new URLSearchParams(window.location.search),urlRoom=urlP.get('room');
+if(urlRoom){history.replaceState(null,'',window.location.pathname);setTimeout(()=>openJoin(urlRoom.toUpperCase()),600)}
 })();
 resetGame();updateRoad();animate();
 </script>
